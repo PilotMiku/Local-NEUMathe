@@ -1,0 +1,20 @@
+node_modules/
+artifacts/
+*.tar.gz
+.DS_Store
+
+# Machine-specific environments and runtime data
+.tools/
+.local/
+__pycache__/
+*.py[cod]
+*.log
+
+# Local hosting identity and browser capture evidence
+.openai/
+neumathe-reference-evidence.json
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example

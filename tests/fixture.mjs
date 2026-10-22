@@ -1,0 +1,81 @@
+// Synthetic QA data only. This file is not shipped in the website or presented as NeuMathe data.
+export const fixture = {
+  subjects: [
+    {
+      id: "math",
+      name: "测试科目",
+      chapters: [{ id: "limits", name: "测试章节" }],
+    },
+  ],
+  source: { name: "QA 合成数据（非原题）" },
+  questions: [
+    {
+      id: "qa-single",
+      subjectId: "math",
+      chapterId: "limits",
+      type: "single",
+      stem: "测试公式：$\\lim_{x \\to 0} \\frac{\\sin x}{x}$ 等于？",
+      options: [
+        { id: "A", text: "$0$" },
+        { id: "B", text: "$1$" },
+      ],
+      answer: "B",
+      analysis: "仅用于验证答题和公式渲染。",
+    },
+    {
+      id: "qa-multi",
+      subjectId: "math",
+      chapterId: "limits",
+      type: "multiple",
+      stem: "测试多选：选择正数。",
+      options: [
+        { id: "A", text: "1" },
+        { id: "B", text: "2" },
+        { id: "C", text: "−1" },
+      ],
+      answer: ["A", "B"],
+      analysis: "测试解析。",
+    },
+    {
+      id: "qa-fill",
+      subjectId: "math",
+      chapterId: "limits",
+      type: "fill",
+      stem: "测试填空：填写 1/2。",
+      answer: "1/2",
+      acceptedAnswers: ["0.5"],
+      analysis: "测试可接受答案。",
+    },
+    {
+      id: "qa-boolean",
+      subjectId: "math",
+      chapterId: "limits",
+      type: "boolean",
+      stem: "测试判断。",
+      answer: true,
+      analysis: "测试判断答案。",
+    },
+    {
+      id: "qa-solution",
+      subjectId: "math",
+      chapterId: "limits",
+      type: "solution",
+      stem: "测试解答题。",
+      answer: "参考过程",
+      analysis: "对照自评。",
+    },
+    {
+      id: "qa-html",
+      subjectId: "math",
+      chapterId: "limits",
+      type: "single",
+      stem: '<p>安全排版测试 <strong>保留强调</strong></p><img src="x" onerror="window.__injected=1"><script>window.__injected=2</script>',
+      options: [
+        { id: "A", text: "安全选项" },
+        { id: "B", text: "另一选项" },
+      ],
+      answer: "A",
+      analysis: '<p>正常解析</p><iframe src="https://example.com"></iframe>',
+    },
+  ],
+};

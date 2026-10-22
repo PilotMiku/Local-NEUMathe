@@ -1,0 +1,40 @@
+{
+  "documents": 122,
+  "pages": 1294,
+  "questions": 3010,
+  "answerVerified": 3010,
+  "manualReview": 0,
+  "analysisMissing": 7,
+  "reviewItems": [
+    {
+      "id": "s-6b82188494c1-q0027",
+      "reason": "No original explanation label was located"
+    },
+    {
+      "id": "s-c7705bea6524-q0005",
+      "reason": "No original explanation label was located"
+    },
+    {
+      "id": "s-3ccdff3355c4-q0025",
+      "reason": "No original explanation label was located"
+    },
+    {
+      "id": "s-28375703e59c-q0046",
+      "reason": "No original explanation label was located"
+    },
+    {
+      "id": "s-5cc65edb6428-q0007",
+      "reason": "No original explanation label was located"
+    },
+    {
+      "id": "s-5cc65edb6428-q0024",
+      "reason": "No original explanation label was located"
+    },
+    {
+      "id": "s-35914e93a3d7-q0002",
+      "reason": "No original explanation label was located"
+    }
+  ],
+  "originalFilesModified": false,
+  "method": "PDF source geometry and two agreeing answer markers; no OCR or invented mathematical text."
+}
