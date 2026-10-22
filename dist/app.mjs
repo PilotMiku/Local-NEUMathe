@@ -39,6 +39,7 @@ const names = {
   solution: "解答题",
 };
 const difficultyNames = { easy: "基础", medium: "进阶", hard: "挑战" };
+const DEFAULT_QUESTION_COUNT = 25;
 const routes = {
   dashboard: "学习概览",
   practice: "题库练习",
@@ -252,7 +253,7 @@ function practicePage() {
   if (route().query.has("session") && state.practice) return practiceSession();
   const filters = getFilters();
   const questions = filterQuestions(bank, filters, state);
-  return `${head("章节练习", "选择章节与知识点，按自己的节奏练习。", state.practice ? button(`继续上次练习 ${icon("arrow", 14)}`, "resume-practice", "", "btn soft") : "")}${filtersHTML(filters)}<section class="card practice-start"><div><span class="pill blue">${esc(subject(filters.subjectId)?.name ?? "全部科目")}</span><h2>${filters.chapterId ? esc(bank.subjects.flatMap((s) => s.chapters).find((c) => c.id === filters.chapterId)?.name ?? "当前章节") : "全部题目"}</h2><p>当前范围共 <strong>${questions.length}</strong> 道题 · 题目、答案来自你提供的 PDF</p></div><div class="flex">${button(`${icon("book", 17)} 顺序练习`, "start-practice", 'data-mode="sequential"', "btn primary")}${button(`${icon("refresh", 17)} 随机 20 题`, "start-practice", 'data-mode="random"', "btn")}</div></section><div class="section-head"><h2>章节目录 <small>展开查看小节</small></h2><span class="muted">${bank.subjects.filter((s) => !filters.subjectId || s.id === filters.subjectId).flatMap((s) => s.chapters.filter((c) => !c.parentId)).length} 章 · ${bank.subjects.filter((s) => !filters.subjectId || s.id === filters.subjectId).flatMap((s) => s.chapters.filter((c) => c.parentId)).length} 个小节</span></div>${bank.subjects
+  return `${head("章节练习", "选择章节与知识点，按自己的节奏练习。", state.practice ? button(`继续上次练习 ${icon("arrow", 14)}`, "resume-practice", "", "btn soft") : "")}${filtersHTML(filters)}<section class="card practice-start"><div><span class="pill blue">${esc(subject(filters.subjectId)?.name ?? "全部科目")}</span><h2>${filters.chapterId ? esc(bank.subjects.flatMap((s) => s.chapters).find((c) => c.id === filters.chapterId)?.name ?? "当前章节") : "全部题目"}</h2><p>当前范围共 <strong>${questions.length}</strong> 道题 · 题目、答案来自你提供的 PDF</p></div><div class="flex">${button(`${icon("book", 17)} 顺序练习`, "start-practice", 'data-mode="sequential"', "btn primary")}${button(`${icon("refresh", 17)} 随机 ${DEFAULT_QUESTION_COUNT} 题`, "start-practice", 'data-mode="random"', "btn")}</div></section><div class="section-head"><h2>章节目录 <small>展开查看小节</small></h2><span class="muted">${bank.subjects.filter((s) => !filters.subjectId || s.id === filters.subjectId).flatMap((s) => s.chapters.filter((c) => !c.parentId)).length} 章 · ${bank.subjects.filter((s) => !filters.subjectId || s.id === filters.subjectId).flatMap((s) => s.chapters.filter((c) => c.parentId)).length} 个小节</span></div>${bank.subjects
     .filter((s) => !filters.subjectId || s.id === filters.subjectId)
     .map(
       (s) =>
@@ -655,7 +656,7 @@ function examOptions() {
   }
   openDialog(
     "给自己一场小小的检验",
-    `<p style="margin-bottom:20px">从已导入题库中随机抽题。选择、判断与填空题自动判分，解答题保留在章节练习中自评。</p><div class="field"><label for="exam-subject">考试科目</label><select id="exam-subject"><option value="">综合练习</option>${bank.subjects.map((s) => `<option value="${attr(s.id)}">${esc(s.name)}</option>`).join("")}</select></div><div class="flex"><div class="field"><label for="exam-count">题量</label><input class="input" id="exam-count" type="number" min="1" max="100" value="${Math.min(20, bank.questions.filter((q) => q.type !== "solution").length) || 1}"></div><div class="field"><label for="exam-minutes">时长 / 分钟</label><input class="input" id="exam-minutes" type="number" min="1" max="240" value="30"></div></div><p id="exam-error" role="alert"></p>`,
+    `<p style="margin-bottom:20px">从已导入题库中随机抽题。选择、判断与填空题自动判分，解答题保留在章节练习中自评。</p><div class="field"><label for="exam-subject">考试科目</label><select id="exam-subject"><option value="">综合练习</option>${bank.subjects.map((s) => `<option value="${attr(s.id)}">${esc(s.name)}</option>`).join("")}</select></div><div class="flex"><div class="field"><label for="exam-count">题量</label><input class="input" id="exam-count" type="number" min="1" max="100" value="${Math.min(DEFAULT_QUESTION_COUNT, bank.questions.filter((q) => q.type !== "solution").length) || 1}"></div><div class="field"><label for="exam-minutes">时长 / 分钟</label><input class="input" id="exam-minutes" type="number" min="1" max="240" value="30"></div></div><p id="exam-error" role="alert"></p>`,
     `${button("先不考", "close-dialog")}${button(`开始考试 ${icon("arrow", 13)}`, "begin-exam", "", "btn primary")}`,
   );
 }
@@ -941,7 +942,7 @@ async function handleAction(action, el) {
     case "start-practice": {
       const list = filterQuestions(bank, getFilters(), state);
       const ids = (
-        el.dataset.mode === "random" ? shuffle(list).slice(0, 20) : list
+        el.dataset.mode === "random" ? shuffle(list).slice(0, DEFAULT_QUESTION_COUNT) : list
       ).map((q) => q.id);
       await startPractice(ids, el.dataset.mode);
       break;
