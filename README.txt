@@ -7,6 +7,7 @@ Local-NEUMathe · 本地数学刷题网站
   线性代数：5 章、10 份 PDF、491 题。
   合计：12 章、132 份 PDF、3501 题。
   原 PDF 未修改；7 道高数原题未附解析，页面如实标注。
+  原始 PDF 统一位于 question-bank/，按高等数学、线性代数分类。
 
 运行
   python3 -m venv .tools/pdf
@@ -16,11 +17,11 @@ Local-NEUMathe · 本地数学刷题网站
   macOS 可使用 启动网站.command / 停止网站.command 管理后台服务。
 
 更新题库
-  在 data/catalog.json 登记新增 PDF，然后停止网站并执行：
+  将新增 PDF 放入 question-bank/ 并在 data/catalog.json 登记，然后停止网站并执行：
   .tools/pdf/bin/python scripts/index_pdf_bank.py
   重启网站并刷新页面。
   已安装的 PDF 题库会按版本升级，并保留已有题目的学习记录。
-  请保持已有 PDF 的相对路径和题目编号稳定。
+  移动或改名 PDF 时更新 path，保留固定 id 和原题编号，即可保持学习记录。
 
 备份
   使用题库管理中的“导出完整备份”。

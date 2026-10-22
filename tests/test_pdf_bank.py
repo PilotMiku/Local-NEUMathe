@@ -1,7 +1,9 @@
 import hashlib
 import json
 import pathlib
+import shutil
 import sys
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -24,6 +26,31 @@ class PdfBankTests(unittest.TestCase):
         self.assertEqual(sum(r['pages'] for r in inventory), 1526)
         self.assertEqual({r['path']: r['sha256'] for r in inventory},
                          {r['path']: r['sha256'] for r in saved})
+        self.assertTrue(all(pathlib.Path(r['path']).parts[0] == 'question-bank' for r in inventory))
+        self.assertFalse(list(ROOT.glob('*.pdf')))
+        self.assertEqual(len({r['id'] for r in inventory}), len(inventory))
+
+    def test_document_id_and_checksum_survive_a_file_move(self):
+        catalog = json.loads((ROOT / 'data/catalog.json').read_text())
+        source = catalog['subjects'][0]['chapters'][0]['documents'][0]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            (root / 'data').mkdir()
+            shutil.copyfile(ROOT / source['path'], root / 'before.pdf')
+            document = {**source, 'path': 'before.pdf'}
+            fixture = {'subjects': [{'id': 'test', 'name': '测试', 'chapters': [
+                {'id': 'chapter', 'name': '章节', 'documents': [document]}]}]}
+            catalog_path = root / 'data/catalog.json'
+            catalog_path.write_text(json.dumps(fixture, ensure_ascii=False))
+            _, before = load_inventory(root)
+            (root / 'nested').mkdir()
+            (root / 'before.pdf').rename(root / 'nested/after.pdf')
+            document['path'] = 'nested/after.pdf'
+            catalog_path.write_text(json.dumps(fixture, ensure_ascii=False))
+            _, after = load_inventory(root)
+            self.assertEqual(before[0]['id'], after[0]['id'])
+            self.assertEqual(before[0]['sha256'], after[0]['sha256'])
+            self.assertEqual(before[0]['expectedQuestions'], after[0]['expectedQuestions'])
 
     def test_every_question_has_source_regions_and_two_matching_answer_signals(self):
         self.assertEqual(set(self.index['questions']), {q['id'] for q in self.bank['questions']})
@@ -45,7 +72,7 @@ class PdfBankTests(unittest.TestCase):
                         self.assertTrue(0 <= y0 < y1 <= 842)
 
     def test_known_linear_algebra_originals_and_revision_cache_keys(self):
-        quadratic = [q for q in self.bank['questions'] if q['source']['file'].endswith('_二次型概念、惯性定理、正定二次型.pdf')]
+        quadratic = [q for q in self.bank['questions'] if q['sourceLabel'].startswith('二次型概念、惯性定理、正定二次型 · ')]
         self.assertEqual([q['answer'] for q in quadratic[:2]], ['D', 'A'])
         self.assertEqual(self.report['analysisMissing'], 7)
         self.assertEqual(sum(q['analysisMissing'] for q in self.bank['questions']), 7)

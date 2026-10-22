@@ -24,7 +24,7 @@ def index_pdf(row):
     path = ROOT / row['path']
     section_number = row['number']
     chapter_no = row['chapterNo']
-    sid = 's-' + hashlib.sha256(row['path'].encode()).hexdigest()[:12]
+    sid = row['id']
     doc = fitz.open(path)
     pages = []
     all_spans = []
@@ -163,6 +163,12 @@ def index_pdf(row):
 
 def main():
     catalog, inventory = load_inventory(ROOT)
+    # Persist IDs for new entries so future directory changes cannot reset progress.
+    ids_by_path = {row['path']: row['id'] for row in inventory}
+    for subject in catalog['subjects']:
+        for chapter in subject['chapters']:
+            for document in chapter['documents']:
+                document['id'] = ids_by_path[document['path']]
     identity = {'version': INDEX_VERSION, 'catalog': catalog,
                 'sources': [(r['path'], r['sha256']) for r in inventory]}
     revision = 'pdf-' + hashlib.sha256(json.dumps(identity, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
@@ -210,6 +216,7 @@ def main():
                             'questions': sum(q['subjectId'] == s['id'] for q in questions)} for s in subjects],
               'originalFilesModified': False,
               'method': 'PDF source geometry and two agreeing answer markers; no OCR or invented mathematical text.'}
+    write_json(ROOT / 'data/catalog.json', catalog, pretty=True)
     write_json(ROOT / 'data/pdf-inventory.json', inventory, pretty=True)
     write_json(ROOT / 'data/render-index.json', render_index)
     write_json(ROOT / 'data/extraction-report.json', report, pretty=True)

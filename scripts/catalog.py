@@ -10,7 +10,7 @@ import fitz
 def load_inventory(root):
     root = pathlib.Path(root).resolve()
     catalog = json.loads((root / 'data/catalog.json').read_text())
-    inventory, paths, subject_ids, chapter_ids = [], set(), set(), set()
+    inventory, paths, subject_ids, chapter_ids, document_ids = [], set(), set(), set(), set()
     for subject in catalog['subjects']:
         if subject['id'] in subject_ids:
             raise ValueError('Duplicate subject: ' + subject['id'])
@@ -28,6 +28,14 @@ def load_inventory(root):
                 if str(relative) in paths:
                     raise ValueError('Duplicate source PDF: ' + str(relative))
                 paths.add(str(relative))
+                # The stored ID survives a PDF rename or move. Legacy catalogs without
+                # IDs retain the original path-derived ID on their first migration.
+                document_id = item.get('id') or 's-' + hashlib.sha256(str(relative).encode()).hexdigest()[:12]
+                if not isinstance(document_id, str) or not re.fullmatch(r's-[a-f0-9]{12}', document_id):
+                    raise ValueError('Invalid document ID: ' + str(document_id))
+                if document_id in document_ids:
+                    raise ValueError('Duplicate document ID: ' + document_id)
+                document_ids.add(document_id)
                 with fitz.open(path) as document:
                     match = re.search(r'共\s*(\d+)\s*道题', document[0].get_text())
                     if not match:
@@ -35,7 +43,7 @@ def load_inventory(root):
                     pages = len(document)
                 exported_number = re.match(r'^\d+(?:\.\d+)*', item['name'])
                 inventory.append({
-                    'path': str(relative), 'name': item['name'],
+                    'id': document_id, 'path': str(relative), 'name': item['name'],
                     'subjectId': subject['id'], 'subjectName': subject['name'],
                     'parentId': chapter['id'], 'chapterNo': chapter_number,
                     'number': exported_number[0] if exported_number else f'{chapter_number}.{section_number}',
