@@ -22,7 +22,7 @@ HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 def healthy():
     try:
         with HTTP.open(URL + 'api/health', timeout=1) as response:
-            return json.load(response).get('service') == 'neumathe-local'
+            return json.load(response).get('service') == 'local-neumathe'
     except Exception:
         return False
 
@@ -73,6 +73,10 @@ def main():
         else:
             raise RuntimeError('本地服务未就绪，请查看 .local/server.log，确认 4178 端口可用')
     status = launch('print', TARGET)
+    # A moved checkout has a different launchd label and ProgramArguments. A healthy
+    # server belonging to another checkout must not be claimed as this one's service.
+    if status.returncode:
+        raise RuntimeError('4178 端口上的网站属于其他项目目录，请先从原目录停止该服务')
     pid = re.search(r'\bpid = (\d+)', status.stdout)
     if pid:
         (LOCAL / 'server.pid').write_text(pid[1])

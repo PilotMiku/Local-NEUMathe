@@ -1,8 +1,9 @@
 {
-  "documents": 122,
-  "pages": 1294,
-  "questions": 3010,
-  "answerVerified": 3010,
+  "revision": "pdf-6310cf572b9c1a77",
+  "documents": 132,
+  "pages": 1526,
+  "questions": 3501,
+  "answerVerified": 3501,
   "manualReview": 0,
   "analysisMissing": 7,
   "reviewItems": [
@@ -33,6 +34,22 @@
     {
       "id": "s-35914e93a3d7-q0002",
       "reason": "No original explanation label was located"
+    }
+  ],
+  "subjects": [
+    {
+      "id": "calculus",
+      "name": "高等数学",
+      "chapters": 7,
+      "documents": 122,
+      "questions": 3010
+    },
+    {
+      "id": "linear",
+      "name": "线性代数",
+      "chapters": 5,
+      "documents": 10,
+      "questions": 491
     }
   ],
   "originalFilesModified": false,

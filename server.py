@@ -3,7 +3,6 @@ import argparse
 import hashlib
 import io
 import json
-import mimetypes
 import pathlib
 import re
 import threading
@@ -16,6 +15,9 @@ from PIL import Image, ImageDraw
 ROOT = pathlib.Path(__file__).resolve().parent
 INDEX = json.loads((ROOT / 'data/render-index.json').read_text())
 REPORT = json.loads((ROOT / 'data/extraction-report.json').read_text())
+MANIFEST = json.loads((ROOT / 'dist/data/manifest.json').read_text())
+if INDEX['revision'] != REPORT['revision'] or INDEX['revision'] != MANIFEST['revision']:
+    raise RuntimeError('题库文件版本不一致，请重新运行 scripts/index_pdf_bank.py')
 CACHE = ROOT / '.local/cache' / INDEX['revision']
 CACHE.mkdir(parents=True, exist_ok=True)
 RENDER_LOCK = threading.RLock()  # PyMuPDF operations are serialized across HTTP threads.
@@ -50,12 +52,17 @@ def render_part(qid, part, number):
 
 
 class Handler(SimpleHTTPRequestHandler):
+    protocol_version = 'HTTP/1.1'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / 'dist'), **kwargs)
 
     def end_headers(self):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'no-referrer')
+        # Revalidate HTML, modules and data after a local update. Question images
+        # carry a source revision in their URL and can be cached independently.
+        if not urlsplit(self.path).path.startswith(('/api/question-image/', '/source-pdf/')):
+            self.send_header('Cache-Control', 'no-cache')
         super().end_headers()
 
     def file_response(self, path, content_type, head=False, cache=False, ranges=False):
@@ -73,6 +80,7 @@ class Handler(SimpleHTTPRequestHandler):
             if start > end or start >= size:
                 self.send_response(416)
                 self.send_header('Content-Range', f'bytes */{size}')
+                self.send_header('Content-Length', '0')
                 self.end_headers()
                 return
             status = 206
@@ -99,8 +107,9 @@ class Handler(SimpleHTTPRequestHandler):
     def dispatch(self, head=False):
         path = unquote(urlsplit(self.path).path)
         if path == '/api/health':
-            body = json.dumps({'ok': True, 'service': 'neumathe-local', 'revision': INDEX['revision'],
+            body = json.dumps({'ok': True, 'service': 'local-neumathe', 'name': 'Local-NEUMathe', 'revision': INDEX['revision'],
                                'questions': REPORT['questions'], 'documents': REPORT['documents'],
+                               'subjects': REPORT['subjects'],
                                'host': '127.0.0.1'}, ensure_ascii=False).encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -144,8 +153,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=4178)
     args = parser.parse_args()
-    server = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
-    print(f'NeuMathe local: http://127.0.0.1:{args.port}/ | {REPORT["questions"]} questions', flush=True)
+    class LocalServer(ThreadingHTTPServer):
+        # A page requests its stem, four choices, logo and scripts concurrently.
+        request_queue_size = 128
+
+    server = LocalServer(('127.0.0.1', args.port), Handler)
+    print(f'Local-NEUMathe: http://127.0.0.1:{args.port}/ | {REPORT["questions"]} questions', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

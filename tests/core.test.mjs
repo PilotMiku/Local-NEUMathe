@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  upgradeBundledBank,
+  BACKUP_FORMAT,
   normalizeBank,
   emptyState,
   emptyBank,
@@ -136,24 +138,87 @@ test("shuffling leaves the bank order unchanged and preserves every selected que
   assert.notDeepEqual(out, a);
 });
 
-test("bundled PDF bank keeps all 3010 original questions, provenance and nested chapters across backups", async () => {
-  const {readFile} = await import('node:fs/promises');
-  const raw=JSON.parse(await readFile(new URL('../dist/data/bank.json',import.meta.url),'utf8'));
-  const bank=normalizeBank(raw);
-  assert.equal(bank.questions.length,3010);
-  assert.equal(bank.sections.length,122);
-  assert.equal(bank.questions.filter(q=>q.answerVerified).length,3010);
-  assert.equal(bank.questions.filter(q=>q.analysisMissing).length,7);
-  assert.equal(bank.questions[0].answer,'B');
-  assert.equal(bank.questions[1].answer,'B');
-  const roots=bank.subjects[0].chapters.filter(c=>!c.parentId);
-  assert.equal(roots.length,7);
-  assert.equal(roots.reduce((n,c)=>n+filterQuestions(bank,{subjectId:'calculus',chapterId:c.id}).length,0),3010);
-  assert.equal(filterQuestions(bank,{chapterId:'chapter-1'}).length,504);
-  assert.equal(filterQuestions(bank,{chapterId:bank.sections[0].id}).length,51);
-  assert.equal(filterQuestions(bank,{search:'1.1 函数'}).length,51);
-  const restored=validateBackup({format:'shijie.backup.v1',bank,state:emptyState()}).bank;
-  assert.equal(filterQuestions(restored,{chapterId:'chapter-1'}).length,504);
-  assert.deepEqual(restored.questions[0].source,bank.questions[0].source);
-  assert.equal(restored.revision,bank.revision);
+test("bundled PDF bank keeps all 3501 original questions, provenance and nested chapters across backups", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const raw = JSON.parse(
+    await readFile(new URL("../dist/data/bank.json", import.meta.url), "utf8"),
+  );
+  const bank = normalizeBank(raw);
+  assert.equal(bank.questions.length, 3501);
+  assert.equal(bank.sections.length, 132);
+  assert.equal(bank.questions.filter((q) => q.answerVerified).length, 3501);
+  assert.equal(bank.questions.filter((q) => q.analysisMissing).length, 7);
+  assert.equal(filterQuestions(bank, { subjectId: "linear" }).length, 491);
+  assert.equal(
+    filterQuestions(bank, {
+      subjectId: "linear",
+      chapterId: "linear-chapter-1",
+    }).length,
+    92,
+  );
+  assert.equal(bank.questions[0].answer, "B");
+  assert.equal(bank.questions[1].answer, "B");
+  const roots = bank.subjects[0].chapters.filter((c) => !c.parentId);
+  assert.equal(roots.length, 7);
+  assert.equal(
+    roots.reduce(
+      (n, c) =>
+        n +
+        filterQuestions(bank, { subjectId: "calculus", chapterId: c.id })
+          .length,
+      0,
+    ),
+    3010,
+  );
+  assert.equal(filterQuestions(bank, { chapterId: "chapter-1" }).length, 504);
+  assert.equal(
+    filterQuestions(bank, { chapterId: bank.sections[0].id }).length,
+    51,
+  );
+  assert.equal(filterQuestions(bank, { search: "1.1 函数" }).length, 51);
+  const restored = validateBackup({
+    format: "shijie.backup.v1",
+    bank,
+    state: emptyState(),
+  }).bank;
+  assert.equal(
+    filterQuestions(restored, { chapterId: "chapter-1" }).length,
+    504,
+  );
+  assert.deepEqual(restored.questions[0].source, bank.questions[0].source);
+  assert.equal(restored.revision, bank.revision);
+});
+
+test("bundle upgrades preserve old question identities and accept legacy backups", () => {
+  const previous = make();
+  previous.revision = "pdf-before";
+  previous.managedBundle = true;
+  const candidate = structuredClone(fixture);
+  candidate.revision = "pdf-after";
+  candidate.questions.push({ ...candidate.questions[0], id: "new-question" });
+  const next = upgradeBundledBank(previous, candidate);
+  assert.equal(next.questions.length, previous.questions.length + 1);
+  assert.deepEqual(next.questions[0].original, previous.questions[0].original);
+  assert.equal(next.managedBundle, true);
+  const state = emptyState();
+  recordAttempt(state, previous.questions[0], "A", false, {
+    id: "before-upgrade",
+  });
+  state.favorites.push(previous.questions[0].id);
+  const restored = validateBackup({ format: BACKUP_FORMAT, bank: next, state });
+  assert.deepEqual(restored.state.attempts, state.attempts);
+  assert.deepEqual(restored.state.favorites, state.favorites);
+  assert.equal(upgradeBundledBank(next, candidate), next);
+});
+test("automatic updates leave custom banks intact and refuse to drop referenced old questions", () => {
+  const custom = make();
+  assert.equal(upgradeBundledBank(custom, fixture), custom);
+  custom.revision = "pdf-manual-import";
+  custom.managedBundle = false;
+  assert.equal(upgradeBundledBank(custom, fixture), custom);
+  const previous = { ...make(), revision: "pdf-old", managedBundle: true };
+  const candidate = structuredClone(fixture);
+  candidate.revision = "pdf-new";
+  candidate.questions = candidate.questions.slice(1);
+  assert.throws(() => upgradeBundledBank(previous, candidate), /保留旧题库/);
 });

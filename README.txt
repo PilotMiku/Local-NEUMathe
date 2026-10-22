@@ -1,72 +1,36 @@
-NeuMathe 本地版 · 高等数学练习网站
+Local-NEUMathe · 本地数学刷题网站
 
-打开网站
-  http://127.0.0.1:4178/
-  双击此目录中的“启动网站.command”即可启动并打开浏览器。
-  双击“停止网站.command”可停止本项目的服务器。
-  服务器仅监听 127.0.0.1；无需登录，也不依赖 NeuMathe 在线服务。
-  启动脚本通过 macOS 当前用户会话管理后台进程，不设置开机自动启动。
-  退出终端不影响已启动的服务；电脑重启后请再次双击启动文件。
-  建议一直使用上述地址；localhost 和 127.0.0.1 的浏览器学习记录彼此独立。
+完整使用说明、题库更新步骤、源码结构及网站预览图见 README.md。
 
-题库
-  使用本目录已有的七章高等数学 PDF：122 份、1294 页、3010 道题。
-  章节：函数与极限、导数与微分、微分中值定理与导数应用、积分及其应用、
-  无穷级数、空间解析几何与向量代数、多元函数微分学。
-  当前提供的 3010 道题均为单选题。正确答案按 PDF 的“【答案】”标记与加粗选项圈
-  两种独立信号进行交叉匹配，全部通过；这代表与原文件标记一致，不是重新解题校验。
-  题干、选项、图形与解析直接显示 PDF 原版面，避免文字提取丢失公式。
-  作答前隐藏独立答案标记及选项圈；提交后显示答案与原解析。
-  7 道题的原 PDF 未附解析，网站如实标注，不生成或补写解析。
-  每题均可打开对应原 PDF 和页码。原 PDF 文件未修改，SHA-256 校验保存在 data/。
-  查询支持章节名、来源题号和 PDF 中可提取的文字；图片内的数学公式不支持全文检索。
-  题图按需在本机生成并缓存；长公式可在题干、选项或解析区域左右滑动查看。
+当前题库
+  高等数学：7 章、122 份 PDF、3010 题。
+  线性代数：5 章、10 份 PDF、491 题。
+  合计：12 章、132 份 PDF、3501 题。
+  原 PDF 未修改；7 道高数原题未附解析，页面如实标注。
 
-功能
-  NeuMathe 风格的顶部导航、蓝色主按钮、浅色圆角卡片与渐变背景。
-  7 章 / 122 小节选择、章节顺序练习、随机 20 题、单题练习。
-  顺序练习包含当前范围的全部题目，题号导航每组显示 40 题。
-  答题判分、原题解析、错题本、收藏、掌握标记、学习统计。
-  模拟考试、倒计时、交卷判分、离开考试页后到时自动交卷、逐题报告。
-  自动保存答题进度、JSON 题库导入、导出、完整学习备份与恢复。
-  手机布局、明暗主题；所有业务资源均由本地服务器提供。
+运行
+  python3 -m venv .tools/pdf
+  .tools/pdf/bin/python -m pip install -r requirements.txt
+  .tools/pdf/bin/python server.py --port 4178
+  打开 http://127.0.0.1:4178/
+  macOS 可使用 启动网站.command / 停止网站.command 管理后台服务。
 
-源码与运行
-  dist/index.html / app.mjs / styles.css：页面、交互与样式。
-  dist/core.mjs：题库标准化、判题、练习、考试、统计。
-  dist/storage.mjs：浏览器 IndexedDB 持久化及首次自动加载题库。
-  dist/data/bank.json：原题索引、答案、来源与章节。
-  server.py：本地 HTTP、原题图片渲染、原 PDF 与 Range 下载。
-  scripts/local_service.py：启动、停止当前用户会话中的本地后台服务。
-  data/render-index.json：每题的 PDF 页面区域索引。
-  data/pdf-inventory.json / extraction-report.json：原文件校验与提取报告。
-  scripts/index_pdf_bank.py：从清单中的原 PDF 重建索引。
-  .local/cache：可删除的题图缓存，删除后会自动重新生成。
-  .local/server.log：服务器日志；.local/server.pid：本项目启动的进程编号。
-  .tools/pdf：本机 Python 环境；requirements.txt：固定依赖版本。
+更新题库
+  在 data/catalog.json 登记新增 PDF，然后停止网站并执行：
+  .tools/pdf/bin/python scripts/index_pdf_bank.py
+  重启网站并刷新页面。
+  已安装的 PDF 题库会按版本升级，并保留已有题目的学习记录。
+  请保持已有 PDF 的相对路径和题目编号稳定。
 
-  在此目录手动运行：
-    .tools/pdf/bin/python server.py --port 4178
-  或：npm run dev
-  请使用 server.py，普通静态文件服务器不能生成 PDF 题图。
-  如果迁移项目到其他电脑，请带上七章原 PDF，并重新创建 Python 环境：
-    python3 -m venv .tools/pdf
-    .tools/pdf/bin/pip install -r requirements.txt
-  本网站不需要前端构建；KaTeX、字体和图标均在本地。
+备份
+  使用题库管理中的“导出完整备份”。
+  迁移时需要同时保留仓库原 PDF，备份 JSON 不含 PDF 本身。
+  改名后沿用旧版浏览器存储键，兼容旧版备份。
 
-保存与备份
-  学习记录与导入题库保存在当前浏览器的 IndexedDB，不上传。
-  使用题库管理中的“导出完整备份”保存题库索引、作答、错题、收藏与考试。
-  PDF 题库备份中的图片地址依赖本项目的 server.py 与原文件；备份 JSON 不包含原 PDF。
-  更换浏览器、设备或清除浏览器数据前请先备份，并保留整个项目中的原 PDF。
-  JSON 导入会提示替换题库并重置学习记录，导入前可导出备份。
-
-验证
-  npm test：9 项核心测试，含实际 3010 题的答案、来源、章节与备份往返校验。
-  npm run test:browser：真实 PDF 题库流程和隔离合成数据流程。
-  浏览器验证脚本使用本机 Google Chrome 和已安装的 REA Playwright 依赖；
-  换电脑运行测试时需调整测试文件中的 Playwright 路径。
-  artifacts/ 下保存桌面、手机、深色模式截图和验证结果。
-  测试使用隔离浏览器环境，不会写入你日常浏览器的学习记录。
-
-本次仅部署在本地，未更新之前的云端网站。
+测试
+  npm test
+  npm run test:pdf
+  npm ci
+  npx playwright install chromium
+  npm run test:browser
+  浏览器测试前需启动本地服务器；macOS 已安装 Chrome 时无需另装浏览器。

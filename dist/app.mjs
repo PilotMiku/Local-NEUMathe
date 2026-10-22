@@ -1,4 +1,6 @@
 import {
+  BANK_FORMAT,
+  BACKUP_FORMAT,
   emptyBank,
   emptyState,
   normalizeBank,
@@ -146,23 +148,8 @@ function persist() {
   saving.catch(() => toast("保存失败，请检查浏览器可用空间，并导出备份"));
   return saving;
 }
-function progressFor(sid) {
-  const ids = new Set(
-    bank.questions.filter((q) => q.subjectId === sid).map((q) => q.id),
-  );
-  const done = new Set(
-    state.attempts
-      .filter((a) => ids.has(a.questionId))
-      .map((a) => a.questionId),
-  );
-  return {
-    total: ids.size,
-    done: done.size,
-    percentage: ids.size ? Math.round((done.size / ids.size) * 100) : 0,
-  };
-}
 function head(title, description, action = "") {
-  return `<header class="page-head"><div><div class="eyebrow">NEUMATHE · 本地学习空间</div><h1>${title}</h1>${description ? `<p class="subtitle">${description}</p>` : ""}</div>${action}</header>`;
+  return `<header class="page-head"><div><div class="eyebrow">LOCAL-NEUMATHE · 本地学习空间</div><h1>${title}</h1>${description ? `<p class="subtitle">${description}</p>` : ""}</div>${action}</header>`;
 }
 
 function empty(
@@ -176,9 +163,6 @@ function bankNotice() {
   return !bank.questions.length
     ? `<div class="notice">${icon("info", 17)}<div><strong>题库准备中，学习空间已就绪</strong><p>导入 NeuMathe 原题后，题目、答案与解析将按原始数据展示。</p></div><a class="btn small" href="#/library">去导入 ${icon("arrow", 12)}</a></div>`
     : "";
-}
-function formulaArt() {
-  return `<svg class="formula-art" viewBox="0 0 240 190" aria-hidden="true"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".8" fill="#c8bfb2" stroke="none"/></pattern></defs><rect width="240" height="190" fill="url(#grid)"/><line x1="30" y1="147" x2="220" y2="147"/><line x1="60" y1="175" x2="60" y2="28"/><path class="shade" d="M60 147Q122 145 146 96T214 35V147Z"/><path class="curve" d="M30 149Q106 154 146 96T220 32"/><circle cx="146" cy="96" r="5" fill="#c86a4c" stroke="none"/><line x1="146" y1="96" x2="146" y2="147" stroke-dasharray="3 4"/><text x="179" y="69" font-size="16" transform="rotate(-12 179 69)">f(x)</text><text x="87" y="45" font-size="22" fill="#a5a795">∫</text><text x="103" y="40" font-size="11">b</text><text x="105" y="61" font-size="10">a</text><text x="111" y="49" font-size="14">f(x) dx</text><text x="205" y="163" font-size="12">x</text><text x="44" y="27" font-size="12">y</text><text x="140" y="165" font-size="10">x₀</text></svg>`;
 }
 function heatmap() {
   const counts = new Map();
@@ -198,28 +182,46 @@ function heatmap() {
   }
   return `<div class="heatmap" role="img" aria-label="近十五周学习记录">${cells}</div><div class="heat-footer"><span>每一小格，都算数</span><span class="legend">少 <i></i><i></i><i></i> 多</span></div>`;
 }
-function subjectCards() {
-  return `<div class="subject-grid">${bank.subjects
-    .map((s, i) => {
-      const p = progressFor(s.id);
-      return `<article class="card subject-card"><div class="subject-head"><span class="subject-glyph">${["∫", "λ", "P"][i % 3]}</span><span class="subject-code">SUBJECT 0${i + 1}</span></div><h3>${esc(s.name)}</h3><p>${esc(s.description || `${s.chapters.length} 个章节，循序渐进`)}</p><div class="subject-meta"><span>${p.total ? p.total.toLocaleString() + " 道题目" : "等待导入原题"}</span><span>${p.total ? p.percentage + "% 已练习" : "—"}</span></div><div class="subject-progress"><span style="width:${p.percentage}%"></span></div><div class="subject-footer"><span>${s.chapters.length} 个章节</span><a href="#/practice?subject=${encodeURIComponent(s.id)}">进入练习 ${icon("arrow", 14)}</a></div></article>`;
-    })
-    .join("")}</div>`;
-}
 function dashboard() {
   const s = stats(state);
-  const parents = bank.subjects.flatMap(s => s.chapters.filter(c => !c.parentId));
-  return `<section class="local-hero"><div class="hero-copy"><span class="pill blue">${icon("spark",14)} NeuMathe 本地题库</span><h1>学数学，<br><span>从每一道题开始。</span></h1><p>跟着章节梳理知识，在练习中找到思路。<br>你的高等数学题库，已经准备就绪。</p><div class="flex"><a class="btn primary" href="#/practice">开始刷题 ${icon("arrow",16)}</a>${state.practice ? button("继续上次练习", "resume-practice", "", "btn") : `<a class="btn" href="#/exams">模拟考试</a>`}</div><div class="hero-source"><span class="status-dot"></span>本地运行 · 无需登录 · 自动保存进度</div></div><div class="math-visual" aria-hidden="true"><div class="math-orbit orbit-one"></div><div class="math-orbit orbit-two"></div><div class="math-grid"></div><div class="math-equation">∫<sub>a</sub><sup>b</sup> f(x) dx</div><div class="math-caption">把知识连成线，让思路更清晰</div><div class="float-formula formula-a">e<sup>iπ</sup> + 1 = 0</div><div class="float-formula formula-b">lim<sub>x→0</sub> sin x / x = 1</div></div></section><section class="card local-stat-strip">${[["book",bank.questions.length.toLocaleString(),"原版题目"],["folder",parents.length,"已接入章节"],["target",s.today,"今日完成"],["chart",s.total?s.accuracy+"%":"—","累计正确率"]].map(([i,v,l])=>`<div>${icon(i,22)}<span><b>${v}</b><small>${l}</small></span></div>`).join("")}</section><div class="section-head"><h2>高等数学 <small>选择章节，开始练习</small></h2><a href="#/practice" class="text-btn">全部章节 ${icon("arrow",15)}</a></div>${chapterCards(false)}<div class="grid-2 local-shortcuts"><a class="card" href="#/review"><span class="shortcut-icon pink">${icon("mistake",23)}</span><div><h3>错题回顾</h3><p>查漏补缺，把薄弱知识点逐个巩固</p></div>${icon("arrow",18)}</a><a class="card" href="#/favorites"><span class="shortcut-icon purple">${icon("star",23)}</span><div><h3>我的收藏</h3><p>留下值得再练的题目，随时复习</p></div>${icon("arrow",18)}</a></div>`;
+  const parents = bank.subjects.flatMap((s) =>
+    s.chapters.filter((c) => !c.parentId),
+  );
+  const activeSubject = subject(getFilters().subjectId) ?? bank.subjects[0];
+  return `<section class="local-hero"><div class="hero-copy"><span class="pill blue">${icon("spark", 14)} Local-NEUMathe</span><h1>学数学，<br><span>从每一道题开始。</span></h1><p>跟着章节梳理知识，在练习中找到思路。<br>${esc(bank.subjects.map((s) => s.name).join("、"))}题库，已经准备就绪。</p><div class="flex"><a class="btn primary" href="#/practice">开始刷题 ${icon("arrow", 16)}</a>${state.practice ? button("继续上次练习", "resume-practice", "", "btn") : `<a class="btn" href="#/exams">模拟考试</a>`}</div><div class="hero-source"><span class="status-dot"></span>本地运行 · 无需登录 · 自动保存进度</div></div><div class="math-visual" aria-hidden="true"><div class="math-orbit orbit-one"></div><div class="math-orbit orbit-two"></div><div class="math-grid"></div><div class="math-equation">∫<sub>a</sub><sup>b</sup> f(x) dx</div><div class="math-caption">把知识连成线，让思路更清晰</div><div class="float-formula formula-a">e<sup>iπ</sup> + 1 = 0</div><div class="float-formula formula-b">lim<sub>x→0</sub> sin x / x = 1</div></div></section><section class="card local-stat-strip">${[
+    ["book", bank.questions.length.toLocaleString(), "原版题目"],
+    ["folder", parents.length, "已接入章节"],
+    ["target", s.today, "今日完成"],
+    ["chart", s.total ? s.accuracy + "%" : "—", "累计正确率"],
+  ]
+    .map(
+      ([i, v, l]) =>
+        `<div>${icon(i, 22)}<span><b>${v}</b><small>${l}</small></span></div>`,
+    )
+    .join(
+      "",
+    )}</section><div class="course-tabs" role="navigation" aria-label="选择学习科目">${bank.subjects.map((s) => `<a href="#/?subject=${encodeURIComponent(s.id)}" class="course-tab ${s.id === activeSubject?.id ? "active" : ""}" ${s.id === activeSubject?.id ? 'aria-current="true"' : ""}><span class="course-symbol">${s.id === "linear" ? "A" : "∫"}</span><span><b>${esc(s.name)}</b><small>${bank.questions.filter((q) => q.subjectId === s.id).length.toLocaleString()} 题 · ${s.chapters.filter((c) => !c.parentId).length} 章</small></span>${icon("arrow", 16)}</a>`).join("")}</div><div class="section-head"><h2>${esc(activeSubject?.name ?? "章节")} <small>选择章节，开始练习</small></h2><a href="#/practice?subject=${encodeURIComponent(activeSubject?.id ?? "")}" class="text-btn">全部章节 ${icon("arrow", 15)}</a></div>${chapterCards(false, activeSubject?.id)}<div class="grid-2 local-shortcuts"><a class="card" href="#/review"><span class="shortcut-icon pink">${icon("mistake", 23)}</span><div><h3>错题回顾</h3><p>查漏补缺，把薄弱知识点逐个巩固</p></div>${icon("arrow", 18)}</a><a class="card" href="#/favorites"><span class="shortcut-icon purple">${icon("star", 23)}</span><div><h3>我的收藏</h3><p>留下值得再练的题目，随时复习</p></div>${icon("arrow", 18)}</a></div>`;
 }
-function chapterCards(expanded = true) {
+function chapterCards(expanded = true, subjectId = "") {
   const filters = getFilters();
-  return `<div class="chapter-grid">${bank.subjects.flatMap(s => s.chapters.filter(c => !c.parentId).map((c,i) => {
-    const questions = filterQuestions(bank,{subjectId:s.id,chapterId:c.id});
-    const done = new Set(state.attempts.filter(a=>questions.some(q=>q.id===a.questionId)).map(a=>a.questionId)).size;
-    const children=s.chapters.filter(ch=>ch.parentId===c.id);
-    const href = `#/practice?subject=${encodeURIComponent(s.id)}&chapter=${encodeURIComponent(c.id)}`;
-    return `<section class="card chapter-card chapter-color-${i%4}"><div class="chapter-card-head"><span class="chapter-glyph">${["ƒ","∂","f′","∫","∑","→","∇"][i%7]}</span><span class="pill">${questions.length} 题</span></div><a href="${href}" class="chapter-title"><span>CHAPTER ${String(i+1).padStart(2,"0")}</span><h3>${esc(c.name.replace(/^第\d+章\s*/,""))}</h3></a><p class="chapter-description">${children.length} 个小节 · 已练 ${done} 题</p><div class="progress-bar"><span style="width:${questions.length?done/questions.length*100:0}%"></span></div>${expanded ? `<details ${filters.chapterId===c.id || children.some(ch=>ch.id===filters.chapterId) ? "open" : ""}><summary>查看章节目录 ${icon("chevron",13)}</summary><div class="section-list">${children.map(ch=>`<a href="#/practice?subject=${encodeURIComponent(s.id)}&chapter=${encodeURIComponent(ch.id)}" class="${filters.chapterId===ch.id?"active":""}"><span>${esc(ch.name)}</span><small>${filterQuestions(bank,{chapterId:ch.id,subjectId:s.id}).length}题</small></a>`).join("")}</div></details>` : `<a class="chapter-link" href="${href}">进入章节 ${icon("arrow",15)}</a>`}</section>`;
-  })).join("")}</div>`;
+  return `<div class="chapter-grid">${bank.subjects
+    .filter((s) => !subjectId || s.id === subjectId)
+    .flatMap((s) =>
+      s.chapters
+        .filter((c) => !c.parentId)
+        .map((c, i) => {
+          const questions = filterQuestions(bank, {
+            subjectId: s.id,
+            chapterId: c.id,
+          });
+          const practiced = new Set(state.attempts.map((a) => a.questionId));
+          const done = questions.filter((q) => practiced.has(q.id)).length;
+          const children = s.chapters.filter((ch) => ch.parentId === c.id);
+          const href = `#/practice?subject=${encodeURIComponent(s.id)}&chapter=${encodeURIComponent(c.id)}`;
+          return `<section class="card chapter-card chapter-color-${i % 4}"><div class="chapter-card-head"><span class="chapter-glyph">${(s.id === "linear" ? ["|A|", "A", "r", "λ", "Q"] : ["ƒ", "∂", "f′", "∫", "∑", "→", "∇"])[i % (s.id === "linear" ? 5 : 7)]}</span><span class="pill">${questions.length} 题</span></div><a href="${href}" class="chapter-title"><span>CHAPTER ${String(i + 1).padStart(2, "0")}</span><h3>${esc(c.name.replace(/^第\d+章\s*/, ""))}</h3></a><p class="chapter-description">${children.length} 个小节 · 已练 ${done} 题</p><div class="progress-bar"><span style="width:${questions.length ? (done / questions.length) * 100 : 0}%"></span></div>${expanded ? `<details ${filters.chapterId === c.id || children.some((ch) => ch.id === filters.chapterId) ? "open" : ""}><summary>查看章节目录 ${icon("chevron", 13)}</summary><div class="section-list">${children.map((ch) => `<a href="#/practice?subject=${encodeURIComponent(s.id)}&chapter=${encodeURIComponent(ch.id)}" class="${filters.chapterId === ch.id ? "active" : ""}"><span>${esc(ch.name)}</span><small>${filterQuestions(bank, { chapterId: ch.id, subjectId: s.id }).length}题</small></a>`).join("")}</div></details>` : `<a class="chapter-link" href="${href}">进入章节 ${icon("arrow", 15)}</a>`}</section>`;
+        }),
+    )
+    .join("")}</div>`;
 }
 
 function getFilters() {
@@ -232,8 +234,10 @@ function getFilters() {
   };
 }
 function filtersHTML(filters, search = true) {
-  const s = subject(filters.subjectId) ?? (bank.subjects.length === 1 ? bank.subjects[0] : null);
-  return `<div class="card filter-bar"><div class="field"><label for="subject-filter">科目</label><select id="subject-filter" data-filter="subject"><option value="">全部科目</option>${bank.subjects.map((s) => `<option value="${attr(s.id)}" ${s.id === filters.subjectId ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select></div><div class="field"><label for="chapter-filter">章节</label><select id="chapter-filter" data-filter="chapter"><option value="">全部章节</option>${(s?.chapters ?? []).map((c) => `<option value="${attr(c.id)}" ${c.id === filters.chapterId ? "selected" : ""}>${c.parentId ? "　↳ " : ""}${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label for="type-filter">题型</label><select id="type-filter" data-filter="type"><option value="">全部题型</option>${Object.entries(
+  const selectedSubjects = bank.subjects.filter(
+    (s) => !filters.subjectId || s.id === filters.subjectId,
+  );
+  return `<div class="card filter-bar"><div class="field"><label for="subject-filter">科目</label><select id="subject-filter" data-filter="subject"><option value="">全部科目</option>${bank.subjects.map((s) => `<option value="${attr(s.id)}" ${s.id === filters.subjectId ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select></div><div class="field"><label for="chapter-filter">章节</label><select id="chapter-filter" data-filter="chapter"><option value="">全部章节</option>${selectedSubjects.map((s) => `<optgroup label="${attr(s.name)}">${s.chapters.map((c) => `<option value="${attr(c.id)}" ${c.id === filters.chapterId ? "selected" : ""}>${c.parentId ? "　↳ " : ""}${esc(c.name)}</option>`).join("")}</optgroup>`).join("")}</select></div><div class="field"><label for="type-filter">题型</label><select id="type-filter" data-filter="type"><option value="">全部题型</option>${Object.entries(
     names,
   )
     .map(
@@ -248,7 +252,24 @@ function practicePage() {
   if (route().query.has("session") && state.practice) return practiceSession();
   const filters = getFilters();
   const questions = filterQuestions(bank, filters, state);
-  return `${head("章节练习", "选择章节与知识点，按自己的节奏练习。", state.practice ? button(`继续上次练习 ${icon("arrow",14)}`,"resume-practice","","btn soft") : "")}${filtersHTML(filters)}<section class="card practice-start"><div><span class="pill blue">高等数学</span><h2>${filters.chapterId ? esc(bank.subjects.flatMap(s=>s.chapters).find(c=>c.id===filters.chapterId)?.name ?? "当前章节") : "全部题目"}</h2><p>当前范围共 <strong>${questions.length}</strong> 道题 · 题目、答案来自你提供的 PDF</p></div><div class="flex">${button(`${icon("book",17)} 顺序练习`,"start-practice",'data-mode="sequential"',"btn primary")}${button(`${icon("refresh",17)} 随机 20 题`,"start-practice",'data-mode="random"',"btn")}</div></section><div class="section-head"><h2>章节目录 <small>展开查看小节</small></h2><span class="muted">7 章 · ${bank.sections?.length ?? 0} 个小节</span></div>${chapterCards(true)}${questions.length ? `<div class="section-head"><h2>题目列表 <small>前 ${Math.min(20,questions.length)} 题，顺序练习可访问全部</small></h2></div><section class="card">${questions.slice(0,20).map((q,i)=>collectionRow(q,i,"preview")).join("")}</section>` : empty("没有符合条件的题目","请切换章节或清除关键词。",`<a class="btn" href="#/practice">查看全部</a>`)}`;
+  return `${head("章节练习", "选择章节与知识点，按自己的节奏练习。", state.practice ? button(`继续上次练习 ${icon("arrow", 14)}`, "resume-practice", "", "btn soft") : "")}${filtersHTML(filters)}<section class="card practice-start"><div><span class="pill blue">${esc(subject(filters.subjectId)?.name ?? "全部科目")}</span><h2>${filters.chapterId ? esc(bank.subjects.flatMap((s) => s.chapters).find((c) => c.id === filters.chapterId)?.name ?? "当前章节") : "全部题目"}</h2><p>当前范围共 <strong>${questions.length}</strong> 道题 · 题目、答案来自你提供的 PDF</p></div><div class="flex">${button(`${icon("book", 17)} 顺序练习`, "start-practice", 'data-mode="sequential"', "btn primary")}${button(`${icon("refresh", 17)} 随机 20 题`, "start-practice", 'data-mode="random"', "btn")}</div></section><div class="section-head"><h2>章节目录 <small>展开查看小节</small></h2><span class="muted">${bank.subjects.filter((s) => !filters.subjectId || s.id === filters.subjectId).flatMap((s) => s.chapters.filter((c) => !c.parentId)).length} 章 · ${bank.subjects.filter((s) => !filters.subjectId || s.id === filters.subjectId).flatMap((s) => s.chapters.filter((c) => c.parentId)).length} 个小节</span></div>${bank.subjects
+    .filter((s) => !filters.subjectId || s.id === filters.subjectId)
+    .map(
+      (s) =>
+        `<section class="subject-chapters"><h3 class="subject-label">${esc(s.name)}</h3>${chapterCards(true, s.id)}</section>`,
+    )
+    .join("")}${
+    questions.length
+      ? `<div class="section-head"><h2>题目列表 <small>前 ${Math.min(20, questions.length)} 题，顺序练习可访问全部</small></h2></div><section class="card">${questions
+          .slice(0, 20)
+          .map((q, i) => collectionRow(q, i, "preview"))
+          .join("")}</section>`
+      : empty(
+          "没有符合条件的题目",
+          "请切换章节或清除关键词。",
+          `<a class="btn" href="#/practice">查看全部</a>`,
+        )
+  }`;
 }
 
 function optionHTML(q, response, graded = false, correct = null) {
@@ -288,7 +309,7 @@ function currentResponse() {
 }
 function sourceInfo(q) {
   if (!q.source?.documentId) return "";
-  return `<div class="source-info"><span>${esc(q.sourceLabel)}</span><a href="/source-pdf/${encodeURIComponent(q.source.documentId)}.pdf#page=${Number(q.source.page)||1}" target="_blank" rel="noopener">查看原 PDF · 第 ${Number(q.source.page)||1} 页 ${icon("arrow",12)}</a></div>`;
+  return `<div class="source-info"><span>${esc(q.sourceLabel)}</span><a href="/source-pdf/${encodeURIComponent(q.source.documentId)}.pdf#page=${Number(q.source.page) || 1}" target="_blank" rel="noopener">查看原 PDF · 第 ${Number(q.source.page) || 1} 页 ${icon("arrow", 12)}</a></div>`;
 }
 function resultBox(q, r) {
   const isManual = q.type === "solution";
@@ -301,7 +322,8 @@ function questionNavigation(p, exam = false) {
       ).length
     : Object.values(p.responses).filter((r) => r.graded).length;
   const navStart = Math.floor(p.index / 40) * 40;
-  return `<aside class="card question-nav"><div class="card-head"><h3>题目导航</h3><span class="muted" style="font-size:10px">${completed}/${p.questionIds.length}</span></div><div class="progress-bar"><span style="width:${(completed / p.questionIds.length) * 100}%"></span></div><div class="question-index">${p.questionIds.slice(navStart, navStart + 40)
+  return `<aside class="card question-nav"><div class="card-head"><h3>题目导航</h3><span class="muted" style="font-size:10px">${completed}/${p.questionIds.length}</span></div><div class="progress-bar"><span style="width:${(completed / p.questionIds.length) * 100}%"></span></div><div class="question-index">${p.questionIds
+    .slice(navStart, navStart + 40)
     .map((id, localIndex) => {
       const i = navStart + localIndex;
       const r = exam ? null : p.responses[id];
@@ -325,7 +347,7 @@ function questionNavigation(p, exam = false) {
     })
     .join(
       "",
-    )}</div>${p.questionIds.length > 40 ? `<div class="flex nav-pages">${button("上一组","navigate-question",`data-index="${Math.max(0,navStart-40)}" ${navStart===0?"disabled":""}`,"btn small")}${button("下一组","navigate-question",`data-index="${navStart+40}" ${navStart+40>=p.questionIds.length?"disabled":""}`,"btn small")}</div><small class="muted">${navStart+1}–${Math.min(navStart+40,p.questionIds.length)} / ${p.questionIds.length}</small>` : ""}<p class="navigator-note">${exam ? "答案会自动保存在当前浏览器。交卷后查看结果与解析。" : "答完一题，再前进一步。练习进度会自动保存。"}</p>${exam ? `<div style="border-top:1px solid var(--line);padding-top:17px;margin-top:19px"><p class="muted" style="font-size:10px">剩余时间</p><div class="timer" data-timer="${attr(p.id)}">${timeRemaining(p)}</div><div style="margin-top:15px">${button("提交试卷", "submit-exam", "", "btn coral")}</div></div>` : ""}</aside>`;
+    )}</div>${p.questionIds.length > 40 ? `<div class="flex nav-pages">${button("上一组", "navigate-question", `data-index="${Math.max(0, navStart - 40)}" ${navStart === 0 ? "disabled" : ""}`, "btn small")}${button("下一组", "navigate-question", `data-index="${navStart + 40}" ${navStart + 40 >= p.questionIds.length ? "disabled" : ""}`, "btn small")}</div><small class="muted">${navStart + 1}–${Math.min(navStart + 40, p.questionIds.length)} / ${p.questionIds.length}</small>` : ""}<p class="navigator-note">${exam ? "答案会自动保存在当前浏览器。交卷后查看结果与解析。" : "答完一题，再前进一步。练习进度会自动保存。"}</p>${exam ? `<div style="border-top:1px solid var(--line);padding-top:17px;margin-top:19px"><p class="muted" style="font-size:10px">剩余时间</p><div class="timer" data-timer="${attr(p.id)}">${timeRemaining(p)}</div><div style="margin-top:15px">${button("提交试卷", "submit-exam", "", "btn coral")}</div></div>` : ""}</aside>`;
 }
 function practiceSession() {
   const p = state.practice;
@@ -427,7 +449,7 @@ function statsPage() {
     .join("")}</section>`;
 }
 function libraryPage() {
-  return `${head("让原题，回到你的学习节奏。", "保留原题内容、标准答案和解析，再用自己的方式练习。", bank.questions.length ? button(`${icon("download", 14)} 导出题库`, "export-bank", "", "btn") : "")}<section class="card library-hero"><div class="empty-symbol">${icon(bank.questions.length ? "check" : "folder", 29)}</div><div class="grow"><span class="pill ${bank.questions.length ? "green" : "coral"}">${bank.questions.length ? "题库已就绪" : "等待原题数据"}</span><h2 style="margin-top:10px">${bank.questions.length ? `${bank.questions.length.toLocaleString()} 道原题，已加入学习空间` : "网站已就绪，题库由你补充"}</h2><p class="subtitle">${bank.questions.length ? `${esc(bank.source.name || "已导入题库")} · ${bank.subjects.length} 个科目 · 导入于 ${shortDate(bank.importedAt)}` : "目前没有填入示例题。导入后，科目、章节、题干、答案与解析均以原始数据为准。"}</p></div></section><div class="grid-2"><section class="card library-card"><div class="card-head"><h2>导入原题库</h2>${icon("upload", 18)}</div><div class="upload-zone" id="drop-zone" tabindex="0" role="button" aria-label="选择或拖入 JSON 题库">${icon("upload", 29)}<h3>把题库带到这里</h3><p>拖入 JSON 文件，或点击选择。导入前会检查题型、答案、选项和章节关联。</p>${button("选择题库文件", "choose-file", "", "btn primary")}<div class="muted" style="font-size:9px;margin-top:12px">JSON 格式 · 最大 50 MB · 最多 100,000 题</div></div><div class="flex" style="justify-content:space-between">${button(`${icon("download", 13)} 下载空白模板`, "download-template", "", "text-btn")}${button("查看格式说明", "import-help", "", "text-btn")}</div><p class="format-note" style="margin-top:18px">支持单选、多选、判断、填空和解答题。公式支持 LaTeX，题干与解析可保留常见 HTML 排版。解答题使用对照自评；填空题可配置多个可接受答案。</p></section><div class="stack"><section class="card library-card"><div class="card-head"><h2>学习数据，留在自己手里</h2>${icon("lock", 16)}</div><div class="data-actions"><button class="data-action" data-action="export-backup"><b>${icon("download", 15)} 导出完整备份</b><p>题库、作答记录、错题、收藏与考试记录。</p></button><button class="data-action" data-action="restore-backup"><b>${icon("refresh", 15)} 恢复学习数据</b><p>选择之前导出的NeuMathe本地版备份，继续上次的进度。</p></button></div><p class="format-note" style="margin-top:14px">学习数据保存在当前浏览器。更换设备或清理浏览器前，请先导出备份。</p></section><section class="card library-card"><div class="card-head"><h2>当前题库</h2><span class="pill">${bank.questions.length} 题</span></div>${bank.subjects.map((s) => `<div class="chapter-row"><span class="grow">${esc(s.name)}</span><span class="muted">${bank.questions.filter((q) => q.subjectId === s.id).length} 题</span></div>`).join("")}<div style="margin-top:17px">${button(`${icon("trash", 12)} 清空学习记录`, "reset-data", "", "text-btn")}</div></section></div></div>`;
+  return `${head("让原题，回到你的学习节奏。", "保留原题内容、标准答案和解析，再用自己的方式练习。", bank.questions.length ? button(`${icon("download", 14)} 导出题库`, "export-bank", "", "btn") : "")}<section class="card library-hero"><div class="empty-symbol">${icon(bank.questions.length ? "check" : "folder", 29)}</div><div class="grow"><span class="pill ${bank.questions.length ? "green" : "coral"}">${bank.questions.length ? "题库已就绪" : "等待原题数据"}</span><h2 style="margin-top:10px">${bank.questions.length ? `${bank.questions.length.toLocaleString()} 道原题，已加入学习空间` : "网站已就绪，题库由你补充"}</h2><p class="subtitle">${bank.questions.length ? `${esc(bank.source.name || "已导入题库")} · ${bank.subjects.length} 个科目 · 导入于 ${shortDate(bank.importedAt)}` : "目前没有填入示例题。导入后，科目、章节、题干、答案与解析均以原始数据为准。"}</p></div></section><div class="grid-2"><section class="card library-card"><div class="card-head"><h2>导入原题库</h2>${icon("upload", 18)}</div><div class="upload-zone" id="drop-zone" tabindex="0" role="button" aria-label="选择或拖入 JSON 题库">${icon("upload", 29)}<h3>把题库带到这里</h3><p>拖入 JSON 文件，或点击选择。导入前会检查题型、答案、选项和章节关联。</p>${button("选择题库文件", "choose-file", "", "btn primary")}<div class="muted" style="font-size:9px;margin-top:12px">JSON 格式 · 最大 50 MB · 最多 100,000 题</div></div><div class="flex" style="justify-content:space-between">${button(`${icon("download", 13)} 下载空白模板`, "download-template", "", "text-btn")}${button("查看格式说明", "import-help", "", "text-btn")}</div><p class="format-note" style="margin-top:18px">支持单选、多选、判断、填空和解答题。公式支持 LaTeX，题干与解析可保留常见 HTML 排版。解答题使用对照自评；填空题可配置多个可接受答案。</p></section><div class="stack"><section class="card library-card"><div class="card-head"><h2>学习数据，留在自己手里</h2>${icon("lock", 16)}</div><div class="data-actions"><button class="data-action" data-action="export-backup"><b>${icon("download", 15)} 导出完整备份</b><p>题库、作答记录、错题、收藏与考试记录。</p></button><button class="data-action" data-action="restore-backup"><b>${icon("refresh", 15)} 恢复学习数据</b><p>选择之前导出的Local-NEUMathe备份，继续上次的进度。</p></button></div><p class="format-note" style="margin-top:14px">学习数据保存在当前浏览器。更换设备或清理浏览器前，请先导出备份。</p></section><section class="card library-card"><div class="card-head"><h2>当前题库</h2><span class="pill">${bank.questions.length} 题</span></div>${bank.subjects.map((s) => `<div class="chapter-row"><span class="grow">${esc(s.name)}</span><span class="muted">${bank.questions.filter((q) => q.subjectId === s.id).length} 题</span></div>`).join("")}<div style="margin-top:17px">${button(`${icon("trash", 12)} 清空学习记录`, "reset-data", "", "text-btn")}</div></section></div></div>`;
 }
 
 function renderRich() {
@@ -526,10 +548,13 @@ function safeContent(value) {
         target.src = url.href;
         target.alt = node.getAttribute("alt") ?? "题目图片";
         target.loading = "eager";
-        if (url.origin === location.origin && url.pathname.startsWith("/api/question-image/")) {
+        if (
+          url.origin === location.origin &&
+          url.pathname.startsWith("/api/question-image/")
+        ) {
           target.className = "original-pdf-image";
           target.addEventListener("load", () => {
-            target.style.width = `${target.naturalWidth / 2.5 * 1.5}px`;
+            target.style.width = `${(target.naturalWidth / 2.5) * 1.5}px`;
           });
           target.addEventListener("error", () => {
             target.alt = "原题图片加载失败，请检查本地服务器或打开原 PDF";
@@ -561,7 +586,6 @@ function draw() {
   document.body.classList.toggle("dark", state.theme === "dark");
   const r = route();
   const page = routes[r.page] ? r.page : "dashboard";
-  const stat = stats(state);
   const navItems = [
     ["dashboard", "home", "学习概览", "/"],
     ["practice", "book", "题库练习", "/practice"],
@@ -573,8 +597,8 @@ function draw() {
   const countWrong = Object.values(state.mistakes).filter(
     (m) => !m.resolved,
   ).length;
-  app.innerHTML = `<div class="local-shell"><header class="local-header"><div class="local-navbar"><a class="local-brand" href="#/" aria-label="NeuMathe 本地版首页"><img src="./assets/neumathe-logo.png" alt=""><strong>NeuMathe</strong><span>本地版</span></a><nav class="local-nav ${mobileOpen ? "open" : ""}" aria-label="主要导航">${[...navItems,["library","folder","题库管理","/library"]].map(([key,i,label,path])=>`<a href="#${path}" class="${page===key || (page==="exam" && key==="exams")?"active":""}" ${page===key?'aria-current="page"':""}>${icon(i,16)}${label}${key==="review" && countWrong?`<small>${countWrong}</small>`:""}</a>`).join("")}</nav><div class="local-header-actions">${button(icon("search",19),"search",'aria-label="搜索题目"',"icon-btn")}${button(icon(state.theme==="dark"?"sun":"moon",19),"toggle-theme",'aria-label="切换明暗主题"',"icon-btn")}${button(icon("menu",20),"toggle-menu",`aria-label="打开导航" aria-expanded="${mobileOpen}"`,"icon-btn local-menu")}<span class="local-avatar">学</span></div></div></header><main id="main" class="local-main" tabindex="-1">${page==="dashboard"?dashboard():page==="practice"?practicePage():page==="review"||page==="favorites"?collectionPage(page):page==="exams"?examsPage():page==="exam"?examPage():page==="stats"?statsPage():libraryPage()}<footer class="footer"><span>NeuMathe 本地版 · 高等数学练习</span><span>题目取自本地 PDF · 学习记录保存在当前浏览器</span></footer></main></div>`;
-  document.title = `${routes[page]} · NeuMathe 本地版`;
+  app.innerHTML = `<div class="local-shell"><header class="local-header"><div class="local-navbar"><a class="local-brand" href="#/" aria-label="Local-NEUMathe 首页"><img src="./assets/neumathe-logo.png" alt=""><strong>Local-NEUMathe</strong><span>本地版</span></a><nav class="local-nav ${mobileOpen ? "open" : ""}" aria-label="主要导航">${[...navItems, ["library", "folder", "题库管理", "/library"]].map(([key, i, label, path]) => `<a href="#${path}" class="${page === key || (page === "exam" && key === "exams") ? "active" : ""}" ${page === key ? 'aria-current="page"' : ""}>${icon(i, 16)}${label}${key === "review" && countWrong ? `<small>${countWrong}</small>` : ""}</a>`).join("")}</nav><div class="local-header-actions">${button(icon("search", 19), "search", 'aria-label="搜索题目"', "icon-btn")}${button(icon(state.theme === "dark" ? "sun" : "moon", 19), "toggle-theme", 'aria-label="切换明暗主题"', "icon-btn")}${button(icon("menu", 20), "toggle-menu", `aria-label="打开导航" aria-expanded="${mobileOpen}"`, "icon-btn local-menu")}<span class="local-avatar">学</span></div></div></header><main id="main" class="local-main" tabindex="-1">${page === "dashboard" ? dashboard() : page === "practice" ? practicePage() : page === "review" || page === "favorites" ? collectionPage(page) : page === "exams" ? examsPage() : page === "exam" ? examPage() : page === "stats" ? statsPage() : libraryPage()}<footer class="footer"><span>Local-NEUMathe · 数学练习</span><span>题目取自本地 PDF · 学习记录保存在当前浏览器</span></footer></main></div>`;
+  document.title = `${routes[page]} · Local-NEUMathe`;
   renderRich();
   attachDropZone();
   if (state.exams.some((e) => e.status === "active")) {
@@ -777,6 +801,7 @@ async function readFile(file) {
       return;
     }
     pendingImport = normalizeBank(parsed);
+    pendingImport.managedBundle = false;
     const n = pendingImport;
     openDialog(
       "原题已检查，准备导入",
@@ -868,8 +893,8 @@ async function handleAction(action, el) {
       break;
     }
     case "download-template":
-      download("NeuMathe本地版-原题导入模板.json", {
-        format: "shijie.bank.v1",
+      download("Local-NEUMathe-原题导入模板.json", {
+        format: BANK_FORMAT,
         source: { name: "NeuMathe", note: "填入实际导出的原题内容" },
         subjects: bank.subjects,
         questions: [],
@@ -884,15 +909,15 @@ async function handleAction(action, el) {
       );
       break;
     case "download-guide":
-      download("NeuMathe本地版-导入格式说明.txt", IMPORT_GUIDE);
+      download("Local-NEUMathe-导入格式说明.txt", IMPORT_GUIDE);
       break;
     case "export-bank":
-      download(`NeuMathe本地版-题库-${dayKey()}.json`, bank);
+      download(`Local-NEUMathe-题库-${dayKey()}.json`, bank);
       toast("题库已导出");
       break;
     case "export-backup":
-      download(`NeuMathe本地版-完整备份-${dayKey()}.json`, {
-        format: "shijie.backup.v1",
+      download(`Local-NEUMathe-完整备份-${dayKey()}.json`, {
+        format: BACKUP_FORMAT,
         exportedAt: Date.now(),
         bank,
         state,
@@ -915,8 +940,9 @@ async function handleAction(action, el) {
       break;
     case "start-practice": {
       const list = filterQuestions(bank, getFilters(), state);
-      const ids = (el.dataset.mode === "random" ? shuffle(list).slice(0,20) : list)
-        .map((q) => q.id);
+      const ids = (
+        el.dataset.mode === "random" ? shuffle(list).slice(0, 20) : list
+      ).map((q) => q.id);
       await startPractice(ids, el.dataset.mode);
       break;
     }
@@ -1074,7 +1100,7 @@ async function handleAction(action, el) {
       break;
   }
 }
-const IMPORT_GUIDE = `NeuMathe本地版题库导入说明\n\n题目、答案与解析请使用实际原始数据。本说明不包含 NeuMathe 原题。\n\nJSON 结构：\n{\n "format":"shijie.bank.v1",\n "source":{"name":"题库来源"},\n "subjects":[{"id":"math","name":"科目名称","chapters":[{"id":"chapter-1","name":"章节名称"}]}],\n "questions":[{\n  "id":"全局唯一ID", "subjectId":"math", "chapterId":"chapter-1",\n  "type":"single", "stem":"原题题干",\n  "options":[{"id":"A","text":"原选项A"},{"id":"B","text":"原选项B"}],\n  "answer":"A", "analysis":"原题解析", "difficulty":"medium", "tags":[]\n }]\n}\n\n题型：single 单选，multiple 多选，boolean 判断，fill 填空，solution 解答。\n多选 answer 使用选项 ID 数组，例如 ["A","C"]。\n判断题默认选项 ID 为 true / false（字符串），也可提供自定义选项。\n填空 answer 为字符串或可接受答案数组；acceptedAnswers 可补充其他写法。\n填空只比较规范化文本，不提供符号代数等价判定。\n解答题保留原答案并由学习者对照自评。\n题干与解析支持常见 HTML 排版和 $…$、$$…$$、\\(…\\)、\\[…\\] LaTeX 公式。\n不执行 HTML 中的脚本、事件或其他主动内容。\n导入会替换题库并重置现有学习数据；导入前请先导出完整备份。\n学习数据只保存在本浏览器，完整备份可用于换设备。\n`;
+const IMPORT_GUIDE = `Local-NEUMathe题库导入说明\n\n题目、答案与解析请使用实际原始数据。本说明不包含 NeuMathe 原题。\n\nJSON 结构：\n{\n "format":"local-neumathe.bank.v1",\n "source":{"name":"题库来源"},\n "subjects":[{"id":"math","name":"科目名称","chapters":[{"id":"chapter-1","name":"章节名称"}]}],\n "questions":[{\n  "id":"全局唯一ID", "subjectId":"math", "chapterId":"chapter-1",\n  "type":"single", "stem":"原题题干",\n  "options":[{"id":"A","text":"原选项A"},{"id":"B","text":"原选项B"}],\n  "answer":"A", "analysis":"原题解析", "difficulty":"medium", "tags":[]\n }]\n}\n\n题型：single 单选，multiple 多选，boolean 判断，fill 填空，solution 解答。\n多选 answer 使用选项 ID 数组，例如 ["A","C"]。\n判断题默认选项 ID 为 true / false（字符串），也可提供自定义选项。\n填空 answer 为字符串或可接受答案数组；acceptedAnswers 可补充其他写法。\n填空只比较规范化文本，不提供符号代数等价判定。\n解答题保留原答案并由学习者对照自评。\n题干与解析支持常见 HTML 排版和 $…$、$$…$$、\\(…\\)、\\[…\\] LaTeX 公式。\n不执行 HTML 中的脚本、事件或其他主动内容。\n导入会替换题库并重置现有学习数据；导入前请先导出完整备份。\n学习数据只保存在本浏览器，完整备份可用于换设备。\n`;
 document.addEventListener("click", (event) => {
   const el = event.target.closest("[data-action]");
   if (el) {
@@ -1171,6 +1197,7 @@ try {
       finishExam(state, bank, exam);
   await persist();
   render();
+  if (data.notice) toast(data.notice);
 } catch (err) {
   app.innerHTML = `<div class="boot"><span class="boot-mark">∑</span><h1>暂时无法打开学习空间</h1><p>请允许此网站使用浏览器存储，或在普通浏览窗口中重试。</p><p>${esc(err.message)}</p><button class="btn" onclick="location.reload()">重新打开</button></div>`;
 }

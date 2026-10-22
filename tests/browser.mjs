@@ -1,17 +1,8 @@
-import { createRequire } from "node:module";
+import { chromium, browserOptions, baseURL } from "./browser-helpers.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { fixture } from "./fixture.mjs";
-const require = createRequire(
-  "/Users/david/.npm/_npx/af752b90495482d7/node_modules/rea-agents/package.json",
-);
-const { chromium } = require("playwright-core");
-await mkdir("artifacts", { recursive: true });
-const browser = await chromium.launch({
-  executablePath:
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  headless: true,
-});
+const browser = await chromium.launch(browserOptions);
 const errors = [];
 try {
   const context = await browser.newContext({
@@ -20,23 +11,27 @@ try {
   });
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("http://127.0.0.1:4178/");
+  await page.goto(`${baseURL}/`);
   await page.locator(".local-hero").waitFor();
   await page.screenshot({
     path: "artifacts/qa-synthetic-dashboard-desktop.png",
     fullPage: true,
   });
-  assert.equal(await page.locator(".local-stat-strip>div:nth-child(3) b").first().innerText(), "0");
+  assert.equal(
+    await page
+      .locator(".local-stat-strip>div:nth-child(3) b")
+      .first()
+      .innerText(),
+    "0",
+  );
   await page.locator('.local-nav a[href="#/library"]').click();
   await page.getByRole("button", { name: "选择题库文件" }).click();
   // File chooser is supplied using the underlying, user-facing file input.
-  await page
-    .locator("#file-input")
-    .setInputFiles({
-      name: "synthetic-qa-bank.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(fixture)),
-    });
+  await page.locator("#file-input").setInputFiles({
+    name: "synthetic-qa-bank.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(fixture)),
+  });
   await page.getByRole("button", { name: "确认导入", exact: true }).click();
   await page.locator(".local-hero").waitFor();
   await page.locator('.local-nav a[href="#/practice"]').click();
@@ -150,7 +145,13 @@ try {
   await page.locator("#file-input").setInputFiles("artifacts/qa-backup.json");
   await page.locator('#dialog [data-action="confirm-dialog"]').click();
   await page.locator(".local-hero").waitFor();
-  assert.equal(await page.locator(".local-stat-strip>div:nth-child(3) b").first().innerText(), "6");
+  assert.equal(
+    await page
+      .locator(".local-stat-strip>div:nth-child(3) b")
+      .first()
+      .innerText(),
+    "6",
+  );
   await page.locator('.local-nav a[href="#/practice"]').click();
   await page.locator("#question-search").fill("安全排版");
   await page.locator("#question-search").dispatchEvent("change");
@@ -173,7 +174,7 @@ try {
   });
   const mp = await mobile.newPage();
   mp.on("pageerror", (e) => errors.push(e.message));
-  await mp.goto("http://127.0.0.1:4178/");
+  await mp.goto(`${baseURL}/`);
   await mp.locator(".local-hero").waitFor();
   assert.equal(
     await mp.evaluate(() => document.documentElement.scrollWidth <= innerWidth),

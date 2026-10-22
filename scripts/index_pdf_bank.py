@@ -10,23 +10,20 @@ import pathlib
 import re
 import time
 import fitz
+from catalog import load_inventory, write_json
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-CHAPTER_NAMES = {
-    1: '函数与极限', 2: '导数与微分', 3: '微分中值定理与导数应用',
-    4: '积分及其应用', 5: '无穷级数', 6: '空间解析几何与向量代数', 7: '多元函数微分学',
-}
 
-def number_key(value):
-    return tuple(int(n) for n in re.findall(r'\d+', pathlib.Path(value).stem.split(' ')[0]))
+# Increment when source geometry or masking changes so browser image caches also refresh.
+INDEX_VERSION = 4
 
 def position(item):
     return (item['page'], item['bbox'][1])
 
 def index_pdf(row):
     path = ROOT / row['path']
-    section_number = re.match(r'[\d.]+', path.stem).group(0).rstrip('.')
-    chapter_no = int(section_number.split('.')[0])
+    section_number = row['number']
+    chapter_no = row['chapterNo']
     sid = 's-' + hashlib.sha256(row['path'].encode()).hexdigest()[:12]
     doc = fitz.open(path)
     pages = []
@@ -91,7 +88,7 @@ def index_pdf(row):
         return result
 
     def image_markup(qid, part, clips, alt):
-        return ''.join(f'<span class="pdf-shot"><img src="/api/question-image/{qid}/{part}/{i}.webp" alt="{html.escape(alt, quote=True)}"></span>' for i in range(len(clips)))
+        return ''.join(f'<span class="pdf-shot"><img src="/api/question-image/{qid}/{part}/{i}.webp?v={row["revision"]}" alt="{html.escape(alt, quote=True)}"></span>' for i in range(len(clips)))
 
     questions = []; images = {}; review = []
     for i, anchor in enumerate(anchors):
@@ -118,6 +115,7 @@ def index_pdf(row):
             if any(abs((c[1]+c[3])/2-yc)<5 for c in pages[option['page']]['circles']): ring_marked.append(option['text'].strip())
         marked = sorted(set(marked)); ring_marked = sorted(set(ring_marked))
         verified = bool(marked) and marked == ring_marked and all(a in letters for a in marked)
+        verified = verified and letters == list('ABCDEFGH'[:len(letters)]) and len(letters) >= 2
         if not verified: review.append({'id': qid, 'reason': 'Answer label and bold ring did not independently agree', 'labels': marked, 'boldRings': ring_marked})
         # Source page linkage is retained even when a question cannot be auto-graded.
         qimages = {}
@@ -140,14 +138,14 @@ def index_pdf(row):
             qimages['analysis'] = []
             review.append({'id':qid,'reason':'No original explanation label was located'})
         stem_text = ' '.join(s['text'].strip() for s in members if stem_start <= position(s) < stem_end)
-        source_label = f'{path.stem} · 第 {number} 题'
+        source_label = f'{row["name"]} · 第 {number} 题'
         question = {
-            'id':qid,'subjectId':'calculus','chapterId':sid,
+            'id':qid,'subjectId':row['subjectId'],'chapterId':sid,
             'type': 'multiple' if len(marked)>1 else 'single',
             'stem':image_markup(qid,'stem',qimages['stem'],source_label),
             'options':options,'answer':marked if len(marked)>1 else (marked[0] if marked else '?'),
             'analysis':image_markup(qid,'analysis',qimages['analysis'],'原题解析'),
-            'acceptedAnswers':[],'difficulty':'medium','tags':[section_number,path.stem],
+            'acceptedAnswers':[],'difficulty':'medium','tags':[section_number,row['name'],row['subjectName']],
             'sourceLabel':source_label,'searchText':source_label+' '+stem_text,
             'answerVerified':verified,
             'analysisMissing': not bool(explanation),
@@ -155,39 +153,71 @@ def index_pdf(row):
         }
         if not verified:
             # Preserve uncertain originals for self-review; never invent an answer.
+            question['stem'] += ''.join(o['text'] for o in options)
             question['type']='solution'
             question['answer']='请对照原 PDF 的答案标记与解析'
         questions.append(question)
         images[qid] = {'documentId':sid,'parts':qimages}
     doc.close()
-    return {'section':{'id':sid,'name':path.stem,'chapterNo':chapter_no,'number':section_number,'file':row['path'],'questionCount':expected,'pages':row['pages'],'sha256':row['sha256']},'questions':questions,'images':images,'review':review}
+    return {'section':{'id':sid,'name':row['name'],'subjectId':row['subjectId'],'parentId':row['parentId'],'chapterNo':chapter_no,'number':section_number,'file':row['path'],'questionCount':expected,'pages':row['pages'],'sha256':row['sha256']},'questions':questions,'images':images,'review':review}
 
 def main():
-    inventory = json.loads((ROOT/'data/pdf-inventory.json').read_text())
-    inventory.sort(key=lambda r:number_key(r['path']))
-    results=[]
+    catalog, inventory = load_inventory(ROOT)
+    identity = {'version': INDEX_VERSION, 'catalog': catalog,
+                'sources': [(r['path'], r['sha256']) for r in inventory]}
+    revision = 'pdf-' + hashlib.sha256(json.dumps(identity, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
+    for row in inventory:
+        row['revision'] = revision
+    results = []
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:
-        for result in pool.map(index_pdf,inventory):
+        for result in pool.map(index_pdf, inventory):
             results.append(result)
-            print(json.dumps({'indexed':len(results),'total':len(inventory),'file':result.get('section',{}).get('name') if isinstance(result.get('section'),dict) else result.get('path'),'questions':len(result.get('questions',[]))},ensure_ascii=False),flush=True)
-    errors=[r for r in results if r.get('error')]
+            section = result.get('section')
+            print(json.dumps({'indexed': len(results), 'total': len(inventory),
+                              'file': section.get('name') if isinstance(section, dict) else result.get('path'),
+                              'questions': len(result.get('questions', []))}, ensure_ascii=False), flush=True)
+    errors = [r for r in results if r.get('error')]
     if errors:
-        (ROOT/'data/extraction-errors.json').write_text(json.dumps(errors,ensure_ascii=False,indent=2))
-        raise RuntimeError(f'{len(errors)} PDF inventories need review; original files were not changed')
-    sections=[r['section'] for r in results]
-    questions=[q for r in results for q in r['questions']]
-    chapters=[]
-    for n,name in CHAPTER_NAMES.items():
-        children=[{'id':s['id'],'name':s['name'],'questionCount':s['questionCount'],'documentId':s['id']} for s in sections if s['chapterNo']==n]
-        chapters.append({'id':f'chapter-{n}','name':f'第{n}章 {name}','children':children,'questionCount':sum(c['questionCount'] for c in children)})
-    bank={'format':'shijie.bank.v1','revision':'pdf-'+hashlib.sha256(''.join(s['sha256'] for s in sections).encode()).hexdigest()[:16],'source':{'name':'NeuMathe 高等数学 · 本地 PDF 原题库','note':'来自你提供的七章 PDF 导出；原题、选项与解析以 PDF 原版面显示。'},'subjects':[{'id':'calculus','name':'高等数学','description':'已接入第 1–7 章原题','chapters':chapters}],'questions':questions,'importedAt':int(time.time()*1000),'sections':sections}
-    render_index={'revision':bank['revision'],'documents':{s['id']:{'path':s['file'],'sha256':s['sha256'],'pages':s['pages']} for s in sections},'questions':{key:value for r in results for key,value in r['images'].items()}}
-    (ROOT/'dist/data').mkdir(exist_ok=True)
-    (ROOT/'dist/data/bank.json').write_text(json.dumps(bank,ensure_ascii=False,separators=(',',':')))
-    (ROOT/'data/render-index.json').write_text(json.dumps(render_index,ensure_ascii=False,separators=(',',':')))
-    review=[i for r in results for i in r['review']]
-    report={'documents':len(sections),'pages':sum(s['pages'] for s in sections),'questions':len(questions),'answerVerified':sum(q['answerVerified'] for q in questions),'manualReview':sum(not q['answerVerified'] for q in questions),'analysisMissing':sum(q['analysisMissing'] for q in questions),'reviewItems':review,'originalFilesModified':False,'method':'PDF source geometry and two agreeing answer markers; no OCR or invented mathematical text.'}
-    (ROOT/'data/extraction-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
-    print(json.dumps({k:v for k,v in report.items() if k!='reviewItems'},ensure_ascii=False),flush=True)
+        write_json(ROOT / 'data/extraction-errors.json', errors, pretty=True)
+        raise RuntimeError('PDF inventories need review; the previous bank and original PDFs were not changed')
+    sections = [r['section'] for r in results]
+    questions = [q for r in results for q in r['questions']]
+    subjects = []
+    for item in catalog['subjects']:
+        chapters = []
+        for chapter in item['chapters']:
+            children = [{'id': s['id'], 'name': s['name'], 'questionCount': s['questionCount'], 'documentId': s['id']}
+                        for s in sections if s['subjectId'] == item['id'] and s['parentId'] == chapter['id']]
+            chapters.append({'id': chapter['id'], 'name': chapter['name'], 'children': children,
+                             'questionCount': sum(c['questionCount'] for c in children)})
+        subjects.append({'id': item['id'], 'name': item['name'], 'description': item.get('description', ''), 'chapters': chapters})
+    bank = {'format': 'local-neumathe.bank.v1', 'revision': revision,
+            'source': {'name': 'Local-NEUMathe · 本地 PDF 原题库', 'note': '来自你提供的高等数学与线性代数 PDF；原题、选项与解析以原版面显示。'},
+            'subjects': subjects, 'questions': questions, 'importedAt': int(time.time()*1000), 'sections': sections}
+    render_index = {'revision': revision, 'documents': {s['id']: {'path': s['file'], 'sha256': s['sha256'], 'pages': s['pages']} for s in sections},
+                    'questions': {key: value for r in results for key, value in r['images'].items()}}
+    empty_parts = [(qid, part) for qid, record in render_index['questions'].items()
+                   for part, clips in record['parts'].items() if not clips and part != 'analysis']
+    if empty_parts:
+        raise RuntimeError('Empty original question regions: ' + str(empty_parts[:10]))
+    review = [i for r in results for i in r['review']]
+    report = {'revision': revision, 'documents': len(sections), 'pages': sum(s['pages'] for s in sections),
+              'questions': len(questions), 'answerVerified': sum(q['answerVerified'] for q in questions),
+              'manualReview': sum(not q['answerVerified'] for q in questions),
+              'analysisMissing': sum(q['analysisMissing'] for q in questions), 'reviewItems': review,
+              'subjects': [{'id': s['id'], 'name': s['name'], 'chapters': len(s['chapters']),
+                            'documents': sum(x['subjectId'] == s['id'] for x in sections),
+                            'questions': sum(q['subjectId'] == s['id'] for q in questions)} for s in subjects],
+              'originalFilesModified': False,
+              'method': 'PDF source geometry and two agreeing answer markers; no OCR or invented mathematical text.'}
+    write_json(ROOT / 'data/pdf-inventory.json', inventory, pretty=True)
+    write_json(ROOT / 'data/render-index.json', render_index)
+    write_json(ROOT / 'data/extraction-report.json', report, pretty=True)
+    write_json(ROOT / 'dist/data/bank.json', bank)
+    # Write the manifest last: clients upgrade only after all data has been validated and replaced.
+    write_json(ROOT / 'dist/data/manifest.json', {k: report[k] for k in ['revision', 'documents', 'questions', 'subjects']})
+    (ROOT / 'data/extraction-errors.json').unlink(missing_ok=True)
+    print(json.dumps({k: v for k, v in report.items() if k != 'reviewItems'}, ensure_ascii=False), flush=True)
 
-if __name__=='__main__':main()
+if __name__ == '__main__':
+    main()

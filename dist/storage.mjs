@@ -1,9 +1,10 @@
-import { emptyBank, emptyState, normalizeBank } from "./core.mjs";
+import { emptyBank, emptyState, upgradeBundledBank } from "./core.mjs";
 let db;
 let queue = Promise.resolve();
 let savedBank;
 export async function openStorage() {
   db = await new Promise((resolve, reject) => {
+    // Retain the original storage key so the project rename preserves existing progress.
     const request = indexedDB.open("shijie-math", 1);
     request.onupgradeneeded = () => request.result.createObjectStore("kv");
     request.onsuccess = () => resolve(request.result);
@@ -24,10 +25,32 @@ export async function openStorage() {
     tx.onerror = () => reject(tx.error);
   });
   savedBank = result.bank;
-  if (!result.bank.questions.length) {
-    const response = await fetch("./data/bank.json");
-    if (!response.ok) throw new Error("本地题库加载失败，请通过启动网站.command 运行服务器");
-    result.bank = normalizeBank(await response.json());
+  const current = result.bank;
+  if (
+    !current.questions.length ||
+    (current.managedBundle !== false && current.revision?.startsWith("pdf-"))
+  ) {
+    try {
+      const manifestResponse = await fetch("./data/manifest.json", {
+        cache: "no-store",
+      });
+      if (!manifestResponse.ok) throw new Error("无法检查本地题库版本");
+      const manifest = await manifestResponse.json();
+      if (!current.questions.length || manifest.revision !== current.revision) {
+        const response = await fetch("./data/bank.json", { cache: "no-store" });
+        if (!response.ok)
+          throw new Error(
+            "本地题库加载失败，请通过启动网站.command 运行服务器",
+          );
+        const candidate = await response.json();
+        if (candidate.revision !== manifest.revision)
+          throw new Error("题库文件版本不一致，请重新生成索引并重启网站");
+        result.bank = upgradeBundledBank(current, candidate);
+      }
+    } catch (error) {
+      if (!current.questions.length) throw error;
+      result.notice = `题库暂未更新：${error.message}。已保留现有学习数据。`;
+    }
   }
   return result;
 }

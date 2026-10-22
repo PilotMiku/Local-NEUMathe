@@ -1,4 +1,6 @@
 export const VERSION = 1;
+export const BANK_FORMAT = "local-neumathe.bank.v1";
+export const BACKUP_FORMAT = "local-neumathe.backup.v1";
 const chapterSets = [
   [
     "calculus",
@@ -57,7 +59,7 @@ export const DEFAULT_SUBJECTS = chapterSets.map(
 );
 export function emptyBank() {
   return {
-    format: "shijie.bank.v1",
+    format: BANK_FORMAT,
     subjects: structuredClone(DEFAULT_SUBJECTS),
     questions: [],
     source: { name: "", note: "" },
@@ -257,7 +259,7 @@ export function normalizeBank(input, { allowEmpty = false } = {}) {
     };
   });
   return {
-    format: "shijie.bank.v1",
+    format: BANK_FORMAT,
     subjects,
     questions,
     source: {
@@ -267,7 +269,27 @@ export function normalizeBank(input, { allowEmpty = false } = {}) {
     importedAt: Date.now(),
     revision: input.revision,
     sections: input.sections,
+    managedBundle: input.managedBundle,
   };
+}
+// Upgrading an installed PDF bundle never replaces an explicitly imported custom bank,
+// and never drops old question IDs that may be referenced by learning records.
+export function upgradeBundledBank(previous, candidate) {
+  if (
+    previous.questions.length &&
+    (previous.managedBundle === false || !previous.revision?.startsWith("pdf-"))
+  )
+    return previous;
+  if (previous.questions.length && previous.revision === candidate.revision)
+    return previous;
+  const next = normalizeBank(candidate);
+  const ids = new Set(next.questions.map((q) => q.id));
+  if (previous.questions.some((q) => !ids.has(q.id)))
+    throw new Error(
+      "新版题库移除了已有题目，已保留旧题库和学习记录，请先导出备份",
+    );
+  next.managedBundle = true;
+  return next;
 }
 function normalizeFill(a) {
   return String(a).normalize("NFKC").replace(/\s+/g, "").replace(/[−–]/g, "-");
@@ -312,10 +334,13 @@ export function filterQuestions(bank, filter = {}, state = emptyState()) {
   const chapterIds = new Set(filter.chapterIds ?? []);
   const selected = new Set(filter.chapterId ? [filter.chapterId] : []);
   if (selected.size) {
-    const chapters = bank.subjects.filter(s => !filter.subjectId || s.id === filter.subjectId).flatMap(s => s.chapters);
-    for (let size = -1; size !== selected.size;) {
+    const chapters = bank.subjects
+      .filter((s) => !filter.subjectId || s.id === filter.subjectId)
+      .flatMap((s) => s.chapters);
+    for (let size = -1; size !== selected.size; ) {
       size = selected.size;
-      for (const c of chapters) if (selected.has(c.parentId)) selected.add(c.id);
+      for (const c of chapters)
+        if (selected.has(c.parentId)) selected.add(c.id);
     }
   }
   return bank.questions.filter(
@@ -448,8 +473,8 @@ export function stats(state, now = Date.now()) {
   };
 }
 export function validateBackup(input) {
-  if (input?.format !== "shijie.backup.v1")
-    throw new Error("这不是拾阶备份文件");
+  if (![BACKUP_FORMAT, "shijie.backup.v1"].includes(input?.format))
+    throw new Error("这不是 Local-NEUMathe 备份文件");
   const bank = normalizeBank(input.bank, { allowEmpty: true });
   const data = input.state;
   if (
