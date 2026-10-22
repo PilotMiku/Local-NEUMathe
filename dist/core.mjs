@@ -76,6 +76,8 @@ export function emptyState() {
     practice: null,
     theme: "light",
     dailyGoal: 20,
+    knowledgeRead: [],
+    knowledgeFavorites: [],
   };
 }
 export const uid = () =>
@@ -514,6 +516,15 @@ export function validateBackup(input) {
   )
     throw new Error("备份中的考试记录不完整");
   const state = { ...emptyState(), ...data, version: VERSION };
+  for (const key of ["knowledgeRead", "knowledgeFavorites"]) {
+    if (
+      data[key] !== undefined &&
+      (!Array.isArray(data[key]) ||
+        data[key].some((id) => typeof id !== "string"))
+    )
+      throw new Error("备份中的知识点学习记录格式错误");
+    state[key] = [...new Set(data[key] || [])];
+  }
   state.dailyGoal = Math.min(200, Math.max(1, Number(data.dailyGoal) || 20));
   state.theme = data.theme === "dark" ? "dark" : "light";
   if (

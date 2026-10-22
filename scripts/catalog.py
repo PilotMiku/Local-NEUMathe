@@ -54,8 +54,16 @@ def load_inventory(root):
     candidates = {str(p.relative_to(root)) for p in root.rglob('*.pdf')
                   if not any(part.startswith('.') or part in {'node_modules', 'artifacts'}
                              for part in p.relative_to(root).parts)}
-    unknown = candidates - paths
+    # Reading notes are registered separately and are not multiple-choice PDF exports.
+    knowledge_registry = root / 'data/knowledge-sources.json'
+    reference_paths = set()
+    if knowledge_registry.exists():
+        references = json.loads(knowledge_registry.read_text())['sources']
+        reference_paths = {s['path'] for s in references if s['type'] == 'pdf'}
+    unknown = candidates - paths - reference_paths
     if unknown:
+        if any(path.startswith('question-bank/习概/') for path in unknown):
+            raise ValueError('New study PDFs were found. Run scripts/index_knowledge.py before indexing the math bank.')
         raise ValueError('Add these PDFs to data/catalog.json before rebuilding: ' + ', '.join(sorted(unknown)))
     return catalog, inventory
 

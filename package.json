@@ -3,13 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/core.test.mjs",
+    "test": "node --test tests/core.test.mjs tests/knowledge.test.mjs",
     "dev": ".tools/pdf/bin/python server.py --port 4178",
-    "test:browser": "node tests/local-bank-browser.mjs && node tests/browser.mjs",
-    "index:bank": ".tools/pdf/bin/python scripts/index_pdf_bank.py",
-    "test:pdf": ".tools/pdf/bin/python -m unittest discover -s tests -p \"test_*.py\""
+    "test:browser": "node tests/local-bank-browser.mjs && node tests/browser.mjs && node tests/knowledge-browser.mjs",
+    "index:bank": ".tools/pdf/bin/python scripts/index_knowledge.py && .tools/pdf/bin/python scripts/index_pdf_bank.py",
+    "test:pdf": ".tools/pdf/bin/python -m unittest discover -s tests -p \"test_*.py\"",
+    "index:knowledge": ".tools/pdf/bin/python scripts/index_knowledge.py"
   },
-  "description": "Local-NEUMathe 本地数学刷题网站",
+  "description": "Local-NEUMathe 本地数学刷题与知识复习网站",
   "devDependencies": {
     "playwright": "^1.64.1"
   }

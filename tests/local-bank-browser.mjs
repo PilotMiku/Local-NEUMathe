@@ -40,7 +40,10 @@ try {
     clip: { x: 0, y: 0, width: 1440, height: 1060 },
   });
   assert.match(await page.title(), /Local-NEUMathe/);
-  assert.equal(await page.locator(".course-tab").count(), 2);
+  assert.equal(
+    await page.locator(".course-tab:not(.knowledge-entry)").count(),
+    2,
+  );
   await page.locator(".course-tab[href*=linear]").click();
   await page.locator(".course-tab.active[href*=linear]").waitFor();
   assert.equal(await page.locator(".chapter-card").count(), 5);

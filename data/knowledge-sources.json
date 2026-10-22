@@ -1,0 +1,269 @@
+{
+  "revision": "knowledge-aa63eff1212f88c3",
+  "sources": [
+    {
+      "id": "ks-ccafc8830605",
+      "path": "question-bank/习概/23版习思想概论-期末复习笔记.pdf",
+      "name": "23版习思想概论-期末复习笔记.pdf",
+      "type": "pdf",
+      "bytes": 2148982,
+      "sha256": "f05b26688d11b1fab54d21d2745618fd98f7cce7a1c72ce836673b5b89f9942f",
+      "pages": 31
+    },
+    {
+      "id": "ks-bc04d4941a24",
+      "path": "question-bank/习概/README.md",
+      "name": "README.md",
+      "type": "md",
+      "bytes": 897,
+      "sha256": "17007e6b8f8516ebb9d11b31ec5d93c011bb7f30dec200406a4659c2c1c0e843"
+    },
+    {
+      "id": "ks-50cc44a99fd6",
+      "path": "question-bank/习概/习思想-导论/习思想-导论.md",
+      "name": "习思想-导论.md",
+      "type": "md",
+      "bytes": 5329,
+      "sha256": "3bc883bb55aae950f8268ddaf22647680a42d14c0cf8738d8848f5be595b33b9"
+    },
+    {
+      "id": "ks-96686210e6be",
+      "path": "question-bank/习概/习思想-导论/习思想-导论.pdf",
+      "name": "习思想-导论.pdf",
+      "type": "pdf",
+      "bytes": 215329,
+      "sha256": "461908ba92d16ad2f779e2977ef671fad3a827a3e4896fde7cc073d6d5e60b3b",
+      "pages": 2
+    },
+    {
+      "id": "ks-11fcc0b0fbe6",
+      "path": "question-bank/习概/习思想-导论-第六章（精简版）.pdf",
+      "name": "习思想-导论-第六章（精简版）.pdf",
+      "type": "pdf",
+      "bytes": 557177,
+      "sha256": "45445e3116540db93cc152b43fe98d7b056732875f10db90182978bfe668eb3d",
+      "pages": 14
+    },
+    {
+      "id": "ks-050512a67057",
+      "path": "question-bank/习概/习思想-第11-13章/习思想-第11-13章.md",
+      "name": "习思想-第11-13章.md",
+      "type": "md",
+      "bytes": 8667,
+      "sha256": "6ba24c5d0c783db4d5c43bb8aeb3fc44297cb90df18dcf359020d5087c56f880"
+    },
+    {
+      "id": "ks-5f9afe7ce218",
+      "path": "question-bank/习概/习思想-第11-13章/习思想-第11-13章.pdf",
+      "name": "习思想-第11-13章.pdf",
+      "type": "pdf",
+      "bytes": 297893,
+      "sha256": "c58d823f4eab51f1dd36062aac58acaddcb70eff408a4b940fbcc9dd459ef35b",
+      "pages": 4
+    },
+    {
+      "id": "ks-878a0fa02e9b",
+      "path": "question-bank/习概/习思想-第14-15章/习思想-第14-15章.md",
+      "name": "习思想-第14-15章.md",
+      "type": "md",
+      "bytes": 5259,
+      "sha256": "2d99a6c74b386a61bea5ae6bd9ce7bbaa575723d83699ef5e607409e4ea8c998"
+    },
+    {
+      "id": "ks-b3280708579a",
+      "path": "question-bank/习概/习思想-第14-15章/习思想-第14-15章.pdf",
+      "name": "习思想-第14-15章.pdf",
+      "type": "pdf",
+      "bytes": 227426,
+      "sha256": "9eac54af0088f19ac2c894c77e7839dd83a4986814f68b2117064438ea81b592",
+      "pages": 3
+    },
+    {
+      "id": "ks-31a7507e8fcb",
+      "path": "question-bank/习概/习思想-第16章-结语/习思想-第16章-结语.pdf",
+      "name": "习思想-第16章-结语.pdf",
+      "type": "pdf",
+      "bytes": 292946,
+      "sha256": "297773a58d47106e2053f64bf668f10f3522894ccf28186954110fb1ce717c26",
+      "pages": 3
+    },
+    {
+      "id": "ks-55959e2e235e",
+      "path": "question-bank/习概/习思想-第16章-结语/第十六章 中国特色大国外交和推动构建人类命运共同体.md",
+      "name": "第十六章 中国特色大国外交和推动构建人类命运共同体.md",
+      "type": "md",
+      "bytes": 7119,
+      "sha256": "4bcddb03ed82cff41e8dcb582d54fc88c82180ec1f88191aaa590119a5aa6d65"
+    },
+    {
+      "id": "ks-afc8cd2c0ab5",
+      "path": "question-bank/习概/习思想-第9-10章/习思想-第9-10章.md",
+      "name": "习思想-第9-10章.md",
+      "type": "md",
+      "bytes": 7882,
+      "sha256": "81cd3c14d1a01178b79e200d0a9ce0ac8ca282f820268fe09612ba33b73d3a11"
+    },
+    {
+      "id": "ks-2588a1a4b2d1",
+      "path": "question-bank/习概/习思想-第9-10章/习思想-第9-10章.pdf",
+      "name": "习思想-第9-10章.pdf",
+      "type": "pdf",
+      "bytes": 291870,
+      "sha256": "f45a230d41bac5f7254d5462229b6ab4f50e7650930e3a899a90b036f9a7083e",
+      "pages": 3
+    },
+    {
+      "id": "ks-ba31314c0437",
+      "path": "question-bank/习概/习思想-第一章/习思想-第一章.md",
+      "name": "习思想-第一章.md",
+      "type": "md",
+      "bytes": 8671,
+      "sha256": "6abec20ab7e621064cb0e4f2946babd45ded3c1653c5bb8a1445471428a9a1cc"
+    },
+    {
+      "id": "ks-d0db4e7a440e",
+      "path": "question-bank/习概/习思想-第一章/习思想-第一章new.pdf",
+      "name": "习思想-第一章new.pdf",
+      "type": "pdf",
+      "bytes": 328404,
+      "sha256": "33c19b5a706f6abd3a5b3c7ad1156c42bd1fa6f73ca7de2b8411b47003956f11",
+      "pages": 3
+    },
+    {
+      "id": "ks-0e5e1e12ce5d",
+      "path": "question-bank/习概/习思想-第七章/习思想-第七章.md",
+      "name": "习思想-第七章.md",
+      "type": "md",
+      "bytes": 5314,
+      "sha256": "40a0ac531f48ec247df715a9b067d0592a26109edb2f53082e04ecc83636f4c1"
+    },
+    {
+      "id": "ks-316da698c807",
+      "path": "question-bank/习概/习思想-第七章/习思想-第七章.pdf",
+      "name": "习思想-第七章.pdf",
+      "type": "pdf",
+      "bytes": 222095,
+      "sha256": "c0848c4aae47017d090095f19d024c4119d59da4aaf98db9fff74973a255559b",
+      "pages": 2
+    },
+    {
+      "id": "ks-ec2db92e6979",
+      "path": "question-bank/习概/习思想-第三章/习思想-第三章.md",
+      "name": "习思想-第三章.md",
+      "type": "md",
+      "bytes": 6638,
+      "sha256": "6651e62ddef4d95a863bb5efe12fc28f43f6915c29a5a0ef8a9a5a1023a84e69"
+    },
+    {
+      "id": "ks-ad69f4404e03",
+      "path": "question-bank/习概/习思想-第三章/习思想-第三章.pdf",
+      "name": "习思想-第三章.pdf",
+      "type": "pdf",
+      "bytes": 252751,
+      "sha256": "199270f2111ce685856e46b01184d906999e2e467357883cfa9b3ac60786d23e",
+      "pages": 3
+    },
+    {
+      "id": "ks-8204dfd5dd8d",
+      "path": "question-bank/习概/习思想-第二章/习思想-第二章.md",
+      "name": "习思想-第二章.md",
+      "type": "md",
+      "bytes": 6740,
+      "sha256": "29f140ebf7fcf113ae1655123fd1b1faa72ec46546541581ffab0b1abbda5461"
+    },
+    {
+      "id": "ks-37d3e4fc8740",
+      "path": "question-bank/习概/习思想-第二章/习思想-第二章.pdf",
+      "name": "习思想-第二章.pdf",
+      "type": "pdf",
+      "bytes": 300691,
+      "sha256": "830d1b1de6684453db94827998ef4821255a1880680859668452714de0f0cbf9",
+      "pages": 3
+    },
+    {
+      "id": "ks-297c4a74aa61",
+      "path": "question-bank/习概/习思想-第五章/习思想-第五章.md",
+      "name": "习思想-第五章.md",
+      "type": "md",
+      "bytes": 5076,
+      "sha256": "65c689eba416def6933e764bfd6be5505f30a8b0385b9419fc63414e0a76f70a"
+    },
+    {
+      "id": "ks-5e17f77b37d3",
+      "path": "question-bank/习概/习思想-第五章/习思想-第五章.pdf",
+      "name": "习思想-第五章.pdf",
+      "type": "pdf",
+      "bytes": 240599,
+      "sha256": "0db2ec193eafce33399a3697bda3a6f205517e40966c037660fea33ccef2f45b",
+      "pages": 3
+    },
+    {
+      "id": "ks-22a4cec38f07",
+      "path": "question-bank/习概/习思想-第八章/习思想-第八章.md",
+      "name": "习思想-第八章.md",
+      "type": "md",
+      "bytes": 5081,
+      "sha256": "5093e49c6f38d830ddb9f5608d745173f4a4ad0554baf2cf9e235fb97b7edd8b"
+    },
+    {
+      "id": "ks-3dd8f0bf8eaf",
+      "path": "question-bank/习概/习思想-第八章/习思想-第八章.pdf",
+      "name": "习思想-第八章.pdf",
+      "type": "pdf",
+      "bytes": 214976,
+      "sha256": "fc8030dcecdf32b8c4a294be7be35909627daabcc40030154be9f056b960f87c",
+      "pages": 2
+    },
+    {
+      "id": "ks-06f160c66e7e",
+      "path": "question-bank/习概/习思想-第六章/习思想-第六章.md",
+      "name": "习思想-第六章.md",
+      "type": "md",
+      "bytes": 13357,
+      "sha256": "814fac367580bd4c8251b4d04926c5515232b7eebc39a4b8d75eebdff3b7cdb4"
+    },
+    {
+      "id": "ks-a2d62dccbf2f",
+      "path": "question-bank/习概/习思想-第六章/习思想-第六章.pdf",
+      "name": "习思想-第六章.pdf",
+      "type": "pdf",
+      "bytes": 371565,
+      "sha256": "915b529fbf13f026c4b59a1f32169d7190a84bf1adfcae7ba5382ad262df23ab",
+      "pages": 5
+    },
+    {
+      "id": "ks-a82d88df67ae",
+      "path": "question-bank/习概/习思想-第四章/习思想-第四章.md",
+      "name": "习思想-第四章.md",
+      "type": "md",
+      "bytes": 5206,
+      "sha256": "5af7ceb6a5037fbe6f861eba492dbe6546b0e2aca3cd84414e8e116a68bdc4c8"
+    },
+    {
+      "id": "ks-7ac4f7b7afc7",
+      "path": "question-bank/习概/习思想-第四章/习思想-第四章.pdf",
+      "name": "习思想-第四章.pdf",
+      "type": "pdf",
+      "bytes": 269210,
+      "sha256": "8e7d77ebe86b8ad564b4952c608fca7a5715b5d9a1cc8cecde31cf0404a060b2",
+      "pages": 2
+    },
+    {
+      "id": "ks-08c93191d959",
+      "path": "question-bank/习概/习思想主要内容+重要体现/习思想主要内容+重要体现.md",
+      "name": "习思想主要内容+重要体现.md",
+      "type": "md",
+      "bytes": 5321,
+      "sha256": "d5a54cb4c3b9d36c78b948fdc42cbc8f9817e74d8ac82b94273a1f5c0167c8b8"
+    },
+    {
+      "id": "ks-034a8d569caf",
+      "path": "question-bank/习概/习思想主要内容+重要体现/习思想主要内容+重要体现.pdf",
+      "name": "习思想主要内容+重要体现.pdf",
+      "type": "pdf",
+      "bytes": 235320,
+      "sha256": "1a302aee3c649e0fd3c925f811308e34d073b77c6a804ccae70b588b381ee4a9",
+      "pages": 2
+    }
+  ]
+}

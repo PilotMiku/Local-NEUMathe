@@ -1,4 +1,4 @@
-Local-NEUMathe · 本地数学刷题网站
+Local-NEUMathe · 本地刷题与知识复习网站
 
 完整使用说明、题库更新步骤、源码结构及网站预览图见 README.md。
 
@@ -7,7 +7,13 @@ Local-NEUMathe · 本地数学刷题网站
   线性代数：5 章、10 份 PDF、491 题。
   合计：12 章、132 份 PDF、3501 题。
   原 PDF 未修改；7 道高数原题未附解析，页面如实标注。
-  原始 PDF 统一位于 question-bank/，按高等数学、线性代数分类。
+  原始资料统一位于 question-bank/，按高等数学、线性代数和习概分类。
+
+习概知识点
+  14 份 Markdown 整理为 20 篇笔记，另有 2 份 PDF 汇编，保留 16 份原 PDF。
+  从首页或导航进入“习概知识点”，支持原文阅读、搜索、目录、收藏和已读记录。
+  更新资料后执行 npm run index:knowledge，并重新启动服务。
+  内容保留原文，知识点不计入数学题量。
 
 运行
   python3 -m venv .tools/pdf

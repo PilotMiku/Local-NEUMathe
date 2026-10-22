@@ -16,6 +16,11 @@ ROOT = pathlib.Path(__file__).resolve().parent
 INDEX = json.loads((ROOT / 'data/render-index.json').read_text())
 REPORT = json.loads((ROOT / 'data/extraction-report.json').read_text())
 MANIFEST = json.loads((ROOT / 'dist/data/manifest.json').read_text())
+KNOWLEDGE = json.loads((ROOT / 'data/knowledge-sources.json').read_text())
+KNOWLEDGE_SOURCES = {s['id']: s for s in KNOWLEDGE['sources']}
+KNOWLEDGE_DATA = json.loads((ROOT / 'dist/data/knowledge.json').read_text())
+if KNOWLEDGE['revision'] != KNOWLEDGE_DATA['revision']:
+    raise RuntimeError('知识点文件版本不一致，请重新运行 scripts/index_knowledge.py')
 if INDEX['revision'] != REPORT['revision'] or INDEX['revision'] != MANIFEST['revision']:
     raise RuntimeError('题库文件版本不一致，请重新运行 scripts/index_pdf_bank.py')
 CACHE = ROOT / '.local/cache' / INDEX['revision']
@@ -110,6 +115,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = json.dumps({'ok': True, 'service': 'local-neumathe', 'name': 'Local-NEUMathe', 'revision': INDEX['revision'],
                                'questions': REPORT['questions'], 'documents': REPORT['documents'],
                                'subjects': REPORT['subjects'],
+                               'knowledge': KNOWLEDGE_DATA['stats'],
                                'host': '127.0.0.1'}, ensure_ascii=False).encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -132,7 +138,17 @@ class Handler(SimpleHTTPRequestHandler):
             if not document:
                 return self.send_error(404)
             return self.file_response(ROOT / document['path'], 'application/pdf', head, ranges=True)
-        if path.startswith(('/api/', '/source-pdf/')):
+        match = re.fullmatch(r'/knowledge-source/(ks-[a-f0-9]{12})\.(pdf|md)', path)
+        if match:
+            source = KNOWLEDGE_SOURCES.get(match[1])
+            if not source or source['type'] != match[2]:
+                return self.send_error(404)
+            target = (ROOT / source['path']).resolve()
+            if ROOT not in target.parents:
+                return self.send_error(404)
+            return self.file_response(target, 'application/pdf' if match[2] == 'pdf' else 'text/markdown; charset=utf-8',
+                                      head, ranges=match[2] == 'pdf')
+        if path.startswith(('/api/', '/source-pdf/', '/knowledge-source/')):
             return self.send_error(404)
         return super().do_HEAD() if head else super().do_GET()
 
