@@ -1,5 +1,7 @@
 # Local-NEUMathe
 
+以停止更新，新类似项目请看https://github.com/PilotMiku/KnowActAcademy
+
 参考 NeuMathe 交互风格的本地学习网站，提供高等数学、线性代数刷题和习概知识点阅读。
 题干、公式、图形和解析直接展示所提供 PDF 的原版面，学习记录保存在本机浏览器。
 
